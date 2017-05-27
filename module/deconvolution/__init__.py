@@ -1,3 +1,7 @@
+"""@package deconvolution
+Python module for performing (automatic) colour deconvolution.
+"""
+
 # -*- coding: utf-8 -*-
 import numpy as np
 
@@ -6,28 +10,60 @@ import imageframe as fr
 
 
 class Deconvolution:
+    """
+    This class acts mainly as an interface. Most functions are implemented in either PixelOperations or ImageFrame.
+    """
+
     def complete_basis(self):
+        """
+        Automatically completes a zero or two vector basis to a two vector basis.
+        """
         self.image_frame.complete_basis(self.pixel_operations)
 
     def resolve_dependencies(self, belligerency=0.3):
+        """
+        Tries to separate colour basis, so that output images are less dependent on each other.
+        :param belligerency: aggressiveness of separation
+        """
         self.image_frame.resolve_dependencies(belligerency=belligerency)
 
     def out_images(self, mode=None):
+        """
+        Get deconvolved images.
+        :param mode: which substances (or reconstructed/remainder), defaults to all
+        :return: list of images
+        """
         return self.image_frame.out_images(pixel_operations=self.pixel_operations, mode=mode)
 
     def out_scalars(self, mode=None):
+        """
+        Get deconvolved scalar density fields.
+        :param mode: which substances (or reconstructed/remainder), defaults to all
+        :return: list of scalar fields
+        """
         return self.image_frame.out_scalars(pixel_operations=self.pixel_operations, mode=mode)
 
     def save_images(self, name=None, mode=None):
-        return self.image_frame.save_images(pixel_operations=self.pixel_operations, name=name, mode=mode)
-
-    def save_scalars(self, name=None, mode=None):
-        return self.image_frame.save_scalars(pixel_operations=self.pixel_operations, name=name, mode=mode)
+        """
+        Saves deconvolved images.
+        :param name: ex. "my_out" will generate files like "my_out_first_substance.png"
+        :param mode: which substances (or reconstructed/remainder), defaults to all
+        """
+        self.image_frame.save_images(pixel_operations=self.pixel_operations, name=name, mode=mode)
 
     def set_source(self, in_image):
+        """
+        Sets image for deconvolution.
+        :param in_image: input image
+        """
         self.image_frame.set_image(in_image)
 
+    # set basis and background check dimensionality before passing further
     def set_basis(self, basis):
+        """
+        Sets initial basis. Basis can be of one of the following shapes: (0,), (1, 3), (2, 3), (3, 3).
+        :param basis: list of colour vectors
+        """
         basis = np.array(basis, dtype=float)
 
         if basis.shape not in [(0,), (1, 3), (2, 3), (3, 3)]:
@@ -38,6 +74,10 @@ class Deconvolution:
         self.pixel_operations.set_basis(basis)
 
     def set_background(self, background):
+        """
+        Sets background to be adjusted for.
+        :param background: colour vector
+        """
         background = np.array(background, dtype=float)
         if np.shape(background) != (3,):
             if self.verbose:
@@ -47,6 +87,10 @@ class Deconvolution:
         self.pixel_operations.set_background(background)
 
     def set_verbose(self, verbose):
+        """
+        Change verbosity.
+        :param verbose: boolean
+        """
         self.verbose = verbose
 
     def __init__(self, image=None, basis=None, verbose=None, background=None):
