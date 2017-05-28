@@ -26,10 +26,12 @@ def _is2(x):
 
 
 class ImageFrame:
-    def __init__(self, image=None, threads=1, verbose=False):
+    def __init__(self, image=None, threads=1, verbose=True):
         """
         Initialising function
-        :param image: image to deconvolve
+        :param image: PIL Image, image to deconvolve
+        :param threads: int, number of threads to use
+        :param verbose: bool, default True
         """
         self.__verbose = True
         if not verbose:
@@ -38,15 +40,32 @@ class ImageFrame:
         self.__image, self.__threads, self.__inertia_matrix = np.asarray(image).copy(), threads, None
 
     def set_image(self, image):
+        """
+        Sets new image for deconvolution.
+        :param image: PIL Image
+        """
         self.__image = np.asarray(image).copy()
 
     def __source_set(self):
+        """
+        Source set?
+        :return: bool
+        """
         return self.__image is not None
 
     def __source_sampled(self):
+        """
+        Source sampled?
+        :return: bool
+        """
         return self.__inertia_matrix is not None
 
     def sample_source(self, pixel_operations, sample_density=5):
+        """
+        Creates __inertia_matrix used for finding optimal bases.
+        :param pixel_operations: used for background info
+        :param sample_density: precision of sampling
+        """
         if not self.__source_set:
             raise Exception("No source set")
 
@@ -67,7 +86,7 @@ class ImageFrame:
         def sample_row(row):
             map(sample_pixel, row)
 
-        Pool().map(sample_row, self.__image)
+        Pool(self.__threads).map(sample_row, self.__image)
 
         w0 = np.ones(2 ** sample_density)
         w1 = np.log(np.identity(2 ** sample_density) + 0.5) - np.log(2) * sample_density
@@ -87,6 +106,10 @@ class ImageFrame:
         self.__inertia_matrix = np.fromfunction(lambda i, j: np.sum(w_mat(i, j) * rgb_sample), (3, 3))
 
     def __find_substance_two(self, pixel_operations):
+        """
+        Used when TWO substances are needed, and NONE is known.
+        :param pixel_operations: used for setting new basis 
+        """
         if self.__verbose:
             print("Searching for best fitting substances...")
 
@@ -118,6 +141,10 @@ class ImageFrame:
             print(subs)
 
     def __find_substance_one(self, pixel_operations):
+        """
+        Used when ONE additional substance is needed, and ONE is already known.
+        :param pixel_operations: used for setting new basis and getting known substance
+        """
         if self.__verbose:
             print("Searching for second best fitting substance...")
 
@@ -153,6 +180,11 @@ class ImageFrame:
             print(subs)
 
     def complete_basis(self, pixel_operations):
+        """
+        Checks dimensionality and completes basis accordingly.
+        Performs sampling automatically if needed.
+        :param pixel_operations: used for interaction with basis
+        """
         if not self.__source_set():
             raise Exception("Set source first")
 
@@ -168,6 +200,11 @@ class ImageFrame:
             print("Basis already complete")
 
     def resolve_dependencies(self, pixel_operations=None, belligerency=0.3):
+        """
+        Tries to minimize mutual dependence of deconvolved substance density fields
+        :param pixel_operations: used for interaction with basis
+        :param belligerency: aggressiveness of corrections
+        """
         if pixel_operations.get_basis_dim() != 2:
             raise Exception("Exactly two element basis needed for resolve_dependencies")
 
@@ -218,9 +255,19 @@ class ImageFrame:
             print(pixel_operations.get_basis())
 
     def out_scalars(self, pixel_operations=None):
+        """
+        Get scalar density fields of substances.
+        :return: list of scalar fields (numpy arrays) 
+        """
         return pixel_operations.get_coef(self.__image)
 
     def out_images(self, pixel_operations=None, mode=None):
+        """
+        Get list of deconvolved images.
+        :param pixel_operations: basis interaction
+        :param mode: which images to return (see ref. table in documentation TODO)
+        :return: list of PIL Images
+        """
         if pixel_operations.get_basis_dim() < 2:
             raise Exception("At least two elements in basis needed")
 
