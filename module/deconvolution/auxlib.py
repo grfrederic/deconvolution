@@ -31,6 +31,12 @@ def check_positivity(r):
 
 
 def find_vals(a, r):
+    """
+    Get density coefficients from logarithmic basis matrix and pixel values.
+    :param a: logarithmic basis matrix, shape (3,2)
+    :param r: pixel values, shape (3,)
+    :return: coefficients, shape (2,)
+    """
     m00, m01, m11, v0, v1 = 0, 0, 0, 0, 0
     for i in range(3):
         m00 += a[i, 0] ** 2
@@ -43,6 +49,11 @@ def find_vals(a, r):
 
 # Adjusts non-physical normals
 def get_physical_normal(n):
+    """
+    Given versor (unit vector), find nearest positive versor.
+    :param n: versor, shape (3,)
+    :return: positive versor, shape (3,)
+    """
     if (n[0] > 0 and n[1] > 0 and n[2] > 0) or (n[0] < 0 and n[1] < 0 and n[2] < 0):
         print("Best fitting plane non-physical, attempting to correct...")
         minimum = n[0] ^ 2
@@ -74,8 +85,12 @@ def get_physical_normal(n):
     return n
 
 
-# Takes as input a physical! normal, and returnes a standarized basis
 def get_basis_from_normal(n):
+    """
+    Finds physical colour basis from given physical (positive) versor (unit vector).
+    :param n: physical versor, shape (3,)
+    :return: (log) basis, shape (2,3)
+    """
     axial_flag = False
     if n[0] * n[1] * n[2] == 0:
         axial_flag = True
@@ -123,10 +138,15 @@ def get_basis_from_normal(n):
 
 
 def orthonormal_rotation(v):
-    if v[0] == 1:
+    """
+    Gives a (orthonormal) rotation matrix transforming [1, 0, 0] to the given vector.
+    :param v: versor (unit vector), shape (3,)
+    :return: (3,3) numpy array
+    """
+    if v[0] == 1.:
         return np.identity(3)
 
-    u = np.array([0, v[1], v[2]]) / np.array((v[1] ** 2 + v[2] ** 2))
+    u = np.array([0., v[1], v[2]]) / np.array((v[1] ** 2 + v[2] ** 2))
     u = u - v * np.dot(u, v)
     u = u / np.linalg.norm(u)
     w = np.cross(v, u)
@@ -135,6 +155,11 @@ def orthonormal_rotation(v):
 
 
 def find_vector(mat):
+    """
+    Find eigenvector with minimal eigenvalue.
+    :param mat: (2,2) list or numpy array
+    :return: numpy array (3,)
+    """
     eig = np.linalg.eig([[mat[1, 1], mat[1, 2]], [mat[2, 1], mat[2, 2]]])
 
     minimum = eig[0][0]
