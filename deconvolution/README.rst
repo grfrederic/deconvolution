@@ -1,5 +1,5 @@
-DECONV - Full featured package to deconvolve images
----------------------------------------------------
+DECONVOLUTION - Full featured package to deconvolve images
+----------------------------------------------------------
 
 There is a class inside with a LOT of useful methods.
 
@@ -7,9 +7,9 @@ There is a class inside with a LOT of useful methods.
 Installation:
 Download the package and as a root type:
 
-# pip install -e deconv
+# pip install -e deconvolution
 
 
 Since then you are able to normally import it in your scripts:
 
-import deconv
+import deconvolution
