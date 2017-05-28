@@ -1,4 +1,4 @@
-name: newdeconv
+name: deconvolution
 channels:
 - defaults
 dependencies:
@@ -40,5 +40,3 @@ dependencies:
   - backports.shutil-get-terminal-size==1.0.0
   - ipython-genutils==0.2.0
   - prompt-toolkit==1.0.14
-prefix: /home/pawel/anaconda3/envs/newdeconv
-
