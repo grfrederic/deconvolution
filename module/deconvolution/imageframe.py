@@ -68,7 +68,7 @@ class ImageFrame:
         Pool(self.__threads).map(sample_row, self.__image)
 
         w0 = np.ones(2 ** sample_density)
-        w1 = np.log(np.identity(2 ** sample_density) + 0.5) - np.log(2) * sample_density
+        w1 = np.log(2) * sample_density - np.log(np.arange(2 ** sample_density) + 0.5)
         w2 = w1 * w1
 
         def w_vec(i):
@@ -80,7 +80,10 @@ class ImageFrame:
                 return w2
 
         def w_mat(i, j):
-            return np.outer(w_vec((i == 0) + (j == 0)), w_vec((i == 1) + (j == 1)), w_vec((i == 2) + (j == 2)))
+            return np.outer(
+                np.outer(w_vec((i == 0) + (j == 0)), w_vec((i == 1) + (j == 1))),
+                w_vec((i == 2) + (j == 2))
+            )
 
         self.__inertia_matrix = np.fromfunction(lambda i, j: np.sum(w_mat(i, j) * rgb_sample), (3, 3))
 
@@ -264,5 +267,5 @@ class ImageFrame:
             if mode is None:
                 mode = [1, 2, 3]
 
-        out_tmp = pixel_operations.transform_pixel(self.__image, mode)
+        out_tmp = pixel_operations.transform_image(self.__image, mode=mode)
         return [Image.fromarray(out_tmp[i]) for i in range(len(mode))]
