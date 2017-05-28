@@ -1,5 +1,5 @@
 import numpy as np
-from multiprocessing import Pool
+#from multiprocessing import Pool
 from PIL import Image
 import auxlib as aux
 
@@ -51,21 +51,17 @@ class ImageFrame:
         step = (2 ** (8 - sample_density))
         rgb_sample = np.zeros(shape=(2 ** sample_density, 2 ** sample_density, 2 ** sample_density))
 
-        if pixel_operations.check_background:
-            def sample_pixel(pix):
-                rgb = np.array(pix, dtype=float) / pixel_operations.background
-                rgb = np.array(map(aux.to_colour_255, rgb))
-                rgb = 1. * rgb / step
-                rgb_sample[tuple(map(int, rgb.tolist()))] += 1
-        else:
-            def sample_pixel(pix):
-                rgb = np.array(pix, dtype=float) / step
-                rgb_sample[tuple(map(int, rgb.tolist()))] += 1
+        def sample_pixel(pix):
+            rgb = np.array(pix, dtype=float) / pixel_operations.get_background()
+            rgb = np.array(map(aux.to_colour_255, rgb))
+            rgb = 1. * rgb / step
+            rgb_sample[tuple(map(int, rgb.tolist()))] += 1
 
         def sample_row(row):
             map(sample_pixel, row)
 
-        Pool(self.__threads).map(sample_row, self.__image)
+        # bad code
+        map(sample_row, self.__image)
 
         w0 = np.ones(2 ** sample_density)
         w1 = np.log(2) * sample_density - np.log(np.arange(2 ** sample_density) + 0.5)
@@ -74,15 +70,15 @@ class ImageFrame:
         def w_vec(i):
             if i == 0:
                 return w0
-            if i == 1:
+            elif i == 1:
                 return w1
-            if i == 2:
+            elif i == 2:
                 return w2
 
         def w_mat(i, j):
             return np.outer(
-                np.outer(w_vec((i == 0) + (j == 0)), w_vec((i == 1) + (j == 1))),
-                w_vec((i == 2) + (j == 2))
+                w_vec((i == 0) + (j == 0)),
+                np.outer(w_vec((i == 1) + (j == 1)), w_vec((i == 2) + (j == 2)))
             )
 
         self.__inertia_matrix = np.fromfunction(lambda i, j: np.sum(w_mat(i, j) * rgb_sample), (3, 3))
