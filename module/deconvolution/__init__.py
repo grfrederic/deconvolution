@@ -35,21 +35,12 @@ class Deconvolution:
         """
         return self.image_frame.out_images(pixel_operations=self.pixel_operations, mode=mode)
 
-    def out_scalars(self, mode=None):
+    def out_scalars(self):
         """
         Get deconvolved scalar density fields.
-        :param mode: which substances (or reconstructed/remainder), defaults to all
         :return: list of scalar fields
         """
-        return self.image_frame.out_scalars(pixel_operations=self.pixel_operations, mode=mode)
-
-    def save_images(self, name=None, mode=None):
-        """
-        Saves deconvolved images.
-        :param name: ex. "my_out" will generate files like "my_out_first_substance.png"
-        :param mode: which substances (or reconstructed/remainder), defaults to all
-        """
-        self.image_frame.save_images(pixel_operations=self.pixel_operations, name=name, mode=mode)
+        return self.image_frame.out_scalars(pixel_operations=self.pixel_operations)
 
     def set_source(self, in_image):
         """
