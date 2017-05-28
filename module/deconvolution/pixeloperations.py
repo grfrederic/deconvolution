@@ -1,16 +1,44 @@
 import numpy as np
 import auxlib as aux
 
+_infzero = 0.00001
+_white = np.array([255, 255, 255], dtype=float)
+
 
 def _proper_vector_check(vect):
     """
     Checks if all list components are in [0,1]
-    :param vect (iterable):
+    :param vect (list or list of lists):
     :return: true/false (bool)
     """
-    return not (max(vect) > 1 or min(vect) < 0)
+    return not (np.amax(vect) > 1 or np.amin(vect) < 0)
 
-_white = np.array([255, 255, 255], dtype=float)
+
+def _array_to_colour_255(arr):
+    """
+    Changes array of floats into arrays of colour entries
+    :param arr: numpy array of shape (x,y,3)
+    :return: array entries converted to integers from [0,255]
+    """
+    return np.array(np.minimum(np.maximum(arr, 0), 255), dtype=int)
+
+
+def _array_to_colour_1(arr):
+    """
+    Changes array of floats into arrays of colour entries
+    :param arr: numpy array of shape (x,y,3)
+    :return: array entries converted to floats from [0,1]
+    """
+    return np.array(np.minimum(np.maximum(arr, 0), 1), dtype=float)
+
+
+def _array_positive(arr):
+    """
+    Changes zeros to inf zeros
+    :param arr:
+    :return: numpy array with the same shape
+    """
+    return np.array(np.maximum(arr, _infzero), dtype=float)
 
 
 class PixelOperations:
@@ -29,18 +57,16 @@ class PixelOperations:
         Sets basis
         :param basis:
         """
-        for vect in basis:
-            if not _proper_vector_check(vect):
-                raise Exception("Check components of the base vectors")
-        self.__basis = basis
+        if not _proper_vector_check(basis):
+            raise Exception("Check components of the base vectors")
+
+        self.__basis = _array_positive(basis)
         self.__basis_dim = len(basis)
 
-        for i in range(basis.shape[0]):
-            for j in range(basis.shape[1]):
-                basis[i][j] = aux.positive(basis[i][j])
-
-        if basis.shape in [(2, 3), (3, 3)]:
-            self.__basis_log_matrix = np.transpose(-np.log(basis))
+        if self.check_basis():
+            if np.linalg.matrix_rank(self.__basis_log_matrix) < self.get_basis_dim():
+                raise Exception("Basis vectors are (pseudo)linearly dependent")
+            self.__basis_log_matrix = np.transpose(-np.log(self.__basis))
 
     def set_background(self, background=None):
         """
@@ -50,7 +76,7 @@ class PixelOperations:
         if not _proper_vector_check(background):
             raise Exception("Check components of the background vector")
 
-        self.__background = np.array(map(aux.positive, map(aux.to_colour_1, background)))
+        self.__background = _array_positive(_array_to_colour_1(background))
 
     def check_background(self):
         """
@@ -73,102 +99,113 @@ class PixelOperations:
         """
         return self.__basis_dim
 
-    def __transform_pixel2(self, pixel, mode):
-        r = np.array(pixel, dtype=float)
-        v, u = np.array(self.__basis[0], dtype=float), np.array(self.__basis[1], dtype=float)
-        a, b = map(aux.positive, self.get_coef(r))
-
-        dec = []
-
-        for i in mode:
-            if i == 0:
-                dec.append(map(aux.to_colour_255, _white * (v ** a) * (u ** b)))
-            if i == 1:
-                dec.append(map(aux.to_colour_255, _white * (v ** a)))
-            if i == 2:
-                dec.append(map(aux.to_colour_255, _white * (u ** b)))
-            if i == 3:
-                dec.append(map(aux.to_colour_255, r * (v ** -a) * (u ** -b)))
-
-        return dec
-
-    def __transform_pixel3(self, pixel, mode):  # for 3 subs, used in out_images
-        r = np.array(pixel, dtype=float)
-        v, u = np.array(self.__basis[0], dtype=float), np.array(self.__basis[1], dtype=float)
-        w = np.array(self.__basis[2], dtype=float)
-
-        a, b, c = map(aux.positive, self.get_coef(r))
-
-        dec = []
-
-        for i in mode:
-            if i == 0:
-                dec.append(map(aux.to_colour_255, _white * (v ** a) * (u ** b) * (w ** c)))
-            if i == 1:
-                dec.append(map(aux.to_colour_255, _white * (v ** a)))
-            if i == 2:
-                dec.append(map(aux.to_colour_255, _white * (u ** b)))
-            if i == 3:
-                dec.append(map(aux.to_colour_255, _white * (w ** c)))
-            if i == 4:
-                dec.append(map(aux.to_colour_255, r * (v ** -a) * (u ** -b) * (w ** -c)))
-
-        return dec
-
-    def transform_pixel(self, pixel, mode=None):
+    def get_basis(self):
         """
-        Transforms given pixel and gives output accordingly to iterable mode
-        :param pixel:
+        Returns basis
+        :return: basis
+        """
+        return self.__basis
+
+    def __transform_image2(self, image, mode):
+        r = np.array(image, dtype=float)
+
+        v, u = self.__basis
+        vf, uf = np.zeros_like(r), np.zeros_like(r)
+        vf[:], uf[:] = v, u
+
+        a, b = map(_array_positive, self.get_coef(r))
+        af = np.repeat(a, 3).reshape(r.shape)
+        bf = np.repeat(b, 3).reshape(r.shape)
+
+        dec = []
+        for i in mode:
+            if i == 0:
+                dec.append(_array_to_colour_255(_white * (vf ** af) * (uf ** bf)))
+            elif i == 1:
+                dec.append(_array_to_colour_255(_white * (vf ** af)))
+            elif i == 2:
+                dec.append(_array_to_colour_255(_white * (uf ** bf)))
+            elif i == 3:
+                dec.append(_array_to_colour_255(r * (vf ** -af) * (uf ** -bf)))
+
+        return dec
+
+    def __transform_image3(self, image, mode):
+        r = np.array(image, dtype=float)
+
+        v, u, w = self.__basis
+        vf, uf, wf = np.zeros_like(r), np.zeros_like(r), np.zeros_like(r)
+        vf[:], uf[:], wf[:] = v, u, w
+
+        a, b, c = map(_array_positive, self.get_coef(r))
+        af = np.repeat(a, 3).reshape(r.shape)
+        bf = np.repeat(b, 3).reshape(r.shape)
+        cf = np.repeat(c, 3).reshape(r.shape)
+
+        dec = []
+        for i in mode:
+            if i == 0:
+                dec.append(_array_to_colour_255(_white * (vf ** af) * (uf ** bf) * (wf ** cf)))
+            elif i == 1:
+                dec.append(_array_to_colour_255(_white * (vf ** af)))
+            elif i == 2:
+                dec.append(_array_to_colour_255(_white * (uf ** bf)))
+            elif i == 3:
+                dec.append(_array_to_colour_255(_white * (wf ** cf)))
+            elif i == 4:
+                dec.append(_array_to_colour_255(r * (vf ** -af) * (uf ** -bf) * (wf ** -cf)))
+
+        return dec
+
+    def transform_image(self, image, mode=None):
+        """
+        Transforms given image array and gives output accordingly to iterable mode
+        :param image:
         :param mode:
-        :return: list with dimension of mode
+        :return: list of images with dimension of mode
         """
         if self.__basis_dim == 2:
-            return self.__transform_pixel2(pixel, [1, 2] if mode is None else mode)
+            return self.__transform_image2(image, [1, 2] if mode is None else mode)
         elif self.__basis_dim == 3:
-            return self.__transform_pixel3(pixel, [1, 2, 3] if mode is None else mode)
+            return self.__transform_image3(image, [1, 2, 3] if mode is None else mode)
         else:
-            raise Exception("You can't transform pixels until you set basis")
+            raise Exception("You can't transform image until you have a proper basis")
 
     def __get_coef2(self, pixel):
         r = np.array(pixel, dtype=float)
-        r = np.array(map(aux.to_colour_1, r/255.), dtype=float)
-        r = np.array(map(aux.positive, r), dtype=float)
+        r = _array_positive(_array_to_colour_1(r/255.))
 
         if self.check_background():
-            return aux.find_vals(self.__basis_log_matrix, np.log(r / self.__background))
+            r = r/self.__background
+
         return aux.find_vals(self.__basis_log_matrix, np.log(r))
 
     def __get_coef3(self, pixel):
         r = np.array(pixel, dtype=float)
-        r = np.array(map(aux.to_colour_1, r/255.), dtype=float)
-        r = np.array(map(aux.positive, r), dtype=float)
+        r = _array_positive(_array_to_colour_1(r/255.))
 
         if self.check_background():
             r /= self.__background
 
-        r = np.array(map(aux.positive, r), dtype=float)
-        r = -np.array(map(np.log, r), dtype=float)
-
-        if np.linalg.matrix_rank(self.__basis_log_matrix) < 3:
-            raise Exception("Error: Basis vectors are (pseudo)linearly dependent")
-
-        sol = np.linalg.solve(self.__basis_log_matrix, r)
-
-        for i in range(len(sol)):
-            sol[i] = max(0, sol[i])
+        sol = np.linalg.solve(self.__basis_log_matrix, -np.log(r))
+        sol = np.maximum(0, sol)
         return sol
 
-    def get_coef(self, pixel):
+    def get_coef(self, image):
         """
-        For a given pixel returns deconvolution
-        :param pixel:
-        :return: coefficient list with length of the basis dimension
+        For a given image returns deconvolution coefficient field
+        :param image:
+        :return: list of numpy arrays; length of the basis dimension
         """
-        if pixel.shape != (3,):
-            raise Exception("Pixel is corrupted - dimensionality is wrong")
+        if image.shape[-1] != 3:
+            raise Exception("Image is corrupted - pixel dimensionality is wrong")
         if not self.check_basis():
             raise Exception("Basis has not been set yet")
+
         if self.get_basis_dim() == 2:
-            return self.__get_coef2(pixel)
+            fv = np.vectorize(self.__get_coef2)
         elif self.get_basis_dim() == 3:
-            return self.__get_coef3(pixel)
+            fv = np.vectorize(self.__get_coef3)
+        else:
+            raise Exception("Extremely rare error. There is a bug in the module")
+        return fv(image)
