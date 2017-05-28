@@ -4,27 +4,6 @@ from PIL import Image
 import auxlib as aux
 
 
-def _is0(x):
-    if x == 0:
-        return 1
-    else:
-        return 0
-
-
-def _is1(x):
-    if x == 1:
-        return 1
-    else:
-        return 0
-
-
-def _is2(x):
-    if x == 2:
-        return 1
-    else:
-        return 0
-
-
 class ImageFrame:
     def __init__(self, image=None, threads=1, verbose=True):
         """
@@ -101,7 +80,7 @@ class ImageFrame:
                 return w2
 
         def w_mat(i, j):
-            return np.outer(w_vec(_is0(i) + _is0(j)), w_vec(_is1(i) + _is1(j)), w_vec(_is2(i) + _is2(j)))
+            return np.outer(w_vec((i == 0) + (j == 0)), w_vec((i == 1) + (j == 1)), w_vec((i == 2) + (j == 2)))
 
         self.__inertia_matrix = np.fromfunction(lambda i, j: np.sum(w_mat(i, j) * rgb_sample), (3, 3))
 
