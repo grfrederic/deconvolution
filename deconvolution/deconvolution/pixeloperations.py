@@ -49,9 +49,8 @@ class PixelOperations:
         :param background:
         """
         self.__basis, self.__basis_dim, self.__background, self.__basis_log_matrix = None, None, None, None
-        if basis is not None:
-            self.set_basis(basis)
 
+        self.set_basis(basis)
         self.set_background(background)
 
     def set_basis(self, basis):
@@ -59,11 +58,17 @@ class PixelOperations:
         Sets basis
         :param basis:
         """
-        if not _proper_vector_check(basis):
+        if basis is None:
+            self.__basis = []
+            self.__basis_dim = 0
+
+        elif not _proper_vector_check(basis):
             raise Exception("Check components of the base vectors")
 
+        else:
+            self.__basis_dim = len(basis)
+
         self.__basis = _array_positive(basis)
-        self.__basis_dim = len(basis)
 
         if self.check_basis():
             self.__basis_log_matrix = np.transpose(-np.log(self.__basis))

@@ -48,6 +48,9 @@ class ImageFrame:
         if not self.__source_set:
             raise Exception("No source set")
 
+        if self.__verbose:
+            print("Sampling source...")
+
         step = (2 ** (8 - sample_density))
         rgb_sample = np.zeros(shape=(2 ** sample_density, 2 ** sample_density, 2 ** sample_density))
 
@@ -76,12 +79,14 @@ class ImageFrame:
                 return w2
 
         def w_mat(i, j):
-            return np.outer(
-                w_vec((i == 0) + (j == 0)),
-                np.outer(w_vec((i == 1) + (j == 1)), w_vec((i == 2) + (j == 2)))
-            )
+            return reduce(np.multiply.outer,
+                          [w_vec((i == 0) + (j == 0)), w_vec((i == 1) + (j == 1)), w_vec((i == 2) + (j == 2))]
+                          )
 
-        self.__inertia_matrix = np.fromfunction(lambda i, j: np.sum(w_mat(i, j) * rgb_sample), (3, 3))
+        self.__inertia_matrix = [[np.sum(w_mat(i, j) * rgb_sample) for i in range(3)] for j in range(3)]
+
+        if self.__verbose:
+            print("Done.")
 
     def __find_substance_two(self, pixel_operations):
         """

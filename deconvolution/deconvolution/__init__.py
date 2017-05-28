@@ -25,7 +25,7 @@ class Deconvolution:
         Tries to separate colour basis, so that output images are less dependent on each other.
         :param belligerency: aggressiveness of separation
         """
-        self.image_frame.resolve_dependencies(belligerency=belligerency)
+        self.image_frame.resolve_dependencies(self.pixel_operations, belligerency=belligerency)
 
     def out_images(self, mode=None):
         """
