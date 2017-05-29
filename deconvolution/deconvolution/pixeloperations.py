@@ -208,9 +208,10 @@ class PixelOperations:
             raise Exception("Image is corrupted - pixel dimensionality is wrong")
 
         if self.get_basis_dim() == 2:
-            fv = np.vectorize(self.__get_coef2)
+            fv = np.vectorize(self.__get_coef2, signature='(n)->(k)')
         elif self.get_basis_dim() == 3:
-            fv = np.vectorize(self.__get_coef3)
+            fv = np.vectorize(self.__get_coef3, signature='(n)->(k)')
         else:
             raise Exception("Basis of dimension 2 or 3 has not been set yet")
-        return fv(image)
+
+        return np.array(fv(image)).transpose((2, 0, 1))

@@ -16,7 +16,11 @@ class ImageFrame:
         if not verbose:
             self.__verbose = False
 
-        self.__image, self.__threads, self.__inertia_matrix = np.asarray(image).copy(), threads, None
+        self.__image = None
+        if image is not None:
+            self.set_image(image)
+
+        self.__threads, self.__inertia_matrix = threads, None
 
     def set_image(self, image):
         """
@@ -198,12 +202,12 @@ class ImageFrame:
         surf = len(self.__image[0]) * len(self.__image[0])
 
         a, b = pixel_operations.get_coef(self.__image)
-        a_neg_sum = np.sum(np.maximum(a, 0))
-        a_pos_sum = np.sum(np.minimum(a, 0))
+        a_neg_sum = np.sum(np.minimum(a, 0))
+        a_pos_sum = np.sum(np.maximum(a, 0))
         a_mean = a_pos_sum/surf
 
-        b_neg_sum = np.sum(np.maximum(b, 0))
-        b_pos_sum = np.sum(np.minimum(b, 0))
+        b_neg_sum = np.sum(np.minimum(b, 0))
+        b_pos_sum = np.sum(np.maximum(b, 0))
         b_mean = b_pos_sum/surf
 
         if self.__verbose:
@@ -212,8 +216,14 @@ class ImageFrame:
             print("Second substance:")
             print("Negativity: ", b_neg_sum/aux.positive(b_pos_sum), "Mean value: ", b_mean, "\n")
 
+        min_x = belligerency * a_mean
+        min_y = belligerency * b_mean
+
+        if min_y <= 0:
+            raise Exception("Something went horribly wrong. Feel free to bash developers")
+
         def safe_div(x, y):
-            if x > belligerency * a_mean and y > belligerency * b_mean:
+            if x > min_x and y > min_y:
                 return x/y
             else:
                 return 1e20
@@ -254,8 +264,8 @@ class ImageFrame:
         if pixel_operations.get_basis_dim() < 2:
             raise Exception("At least two elements in basis needed")
 
-        if self.__source_set():
-            print("Error: source has to be set first")
+        if not self.__source_set():
+            raise Exception("Error: source has to be set first")
 
         if self.__verbose:
             print("Returning deconvolved images...")
@@ -269,4 +279,4 @@ class ImageFrame:
                 mode = [1, 2, 3]
 
         out_tmp = pixel_operations.transform_image(self.__image, mode=mode)
-        return [Image.fromarray(out_tmp[i]) for i in range(len(mode))]
+        return [Image.fromarray(np.uint8(out_tmp[i])) for i in range(len(mode))]
