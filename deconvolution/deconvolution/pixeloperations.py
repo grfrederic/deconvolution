@@ -5,6 +5,7 @@ _infzero = 0.00001
 _white255 = np.array([255, 255, 255], dtype=float)
 _white1 = np.array([1, 1, 1], dtype=float)
 
+
 def _proper_vector_check(vect):
     """
     Checks if all list components are in [0,1]
@@ -20,7 +21,7 @@ def _array_to_colour_255(arr):
     :param arr: numpy array of shape (x,y,3)
     :return: array entries converted to integers from [0,255]
     """
-    return np.array(np.minimum(np.maximum(arr, 0), 255), dtype=int)
+    return np.array(np.minimum(np.maximum(arr, 0), 255), dtype=np.uint8)
 
 
 def _array_to_colour_1(arr):
@@ -58,7 +59,7 @@ class PixelOperations:
         Sets basis
         :param basis:
         """
-        if basis is None:
+        if basis is None or len(basis) == 0:
             self.__basis = []
             self.__basis_dim = 0
 

@@ -33,6 +33,10 @@ class Deconvolution:
         :param mode: which substances (or reconstructed/remainder), defaults to all
         :return: list of images
         """
+        if not self.pixel_operations.check_basis():
+            self.complete_basis()
+            self.resolve_dependencies()
+
         return self.image_frame.out_images(pixel_operations=self.pixel_operations, mode=mode)
 
     def out_scalars(self):
@@ -40,6 +44,10 @@ class Deconvolution:
         Get deconvolved scalar density fields.
         :return: list of scalar fields
         """
+        if not self.pixel_operations.check_basis():
+            self.complete_basis()
+            self.resolve_dependencies()
+
         return self.image_frame.out_scalars(pixel_operations=self.pixel_operations)
 
     def set_source(self, in_image):
@@ -84,10 +92,10 @@ class Deconvolution:
         """
         self.verbose = verbose
 
-    def __init__(self, image=None, basis=None, verbose=None, background=None):
+    def __init__(self, image=None, basis=None, verbose=False, background=None):
 
         self.pixel_operations = po.PixelOperations(basis=basis, background=background)
-        self.image_frame = fr.ImageFrame(image=image)
+        self.image_frame = fr.ImageFrame(image=image, verbose=verbose)
 
         self.verbose = False
         self.sample_flag = False
