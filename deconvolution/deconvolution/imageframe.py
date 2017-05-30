@@ -5,16 +5,16 @@ import auxlib as aux
 
 
 class ImageFrame:
-    def __init__(self, image=None, threads=1, verbose=True):
+    def __init__(self, image=None, threads=1, verbose=False):
         """
         Initialising function
         :param image: PIL Image, image to deconvolve
         :param threads: int, number of threads to use
         :param verbose: bool, default True
         """
-        self.__verbose = True
-        if not verbose:
-            self.__verbose = False
+        self.__verbose = False
+        if verbose:
+            self.__verbose = True
 
         self.__image = None
         if image is not None:
@@ -197,7 +197,7 @@ class ImageFrame:
 
         # collecting data
         if self.__verbose:
-            print("Decomposition info:\n")
+            print "Decomposition info:\n"
 
         surf = len(self.__image[0]) * len(self.__image[0])
 
@@ -211,10 +211,10 @@ class ImageFrame:
         b_mean = b_pos_sum/surf
 
         if self.__verbose:
-            print("First substance:")
-            print("Negativity: ", a_neg_sum/aux.positive(a_pos_sum), "Mean value: ", a_mean)
-            print("Second substance:")
-            print("Negativity: ", b_neg_sum/aux.positive(b_pos_sum), "Mean value: ", b_mean, "\n")
+            print "First substance:"
+            print "Negativity: {} Mean value: {}".format(a_neg_sum/aux.positive(a_pos_sum), a_mean)
+            print "Second substance:"
+            print "Negativity: {} Mean value: {}".format(b_neg_sum/aux.positive(b_pos_sum), b_mean)
 
         min_x = belligerency * a_mean
         min_y = belligerency * b_mean
@@ -235,7 +235,7 @@ class ImageFrame:
         k2 = np.min(safe_vec_div(b, a))
 
         if self.__verbose:
-            print("Mutual dependencies k1, k2 =", k1, ", ", k2)
+            print "Mutual dependencies k1, k2 = {}, {}".format(k1, k2)
 
         basis = pixel_operations.get_basis()
         pixel_operations.set_basis(
@@ -244,8 +244,8 @@ class ImageFrame:
         )
 
         if self.__verbose:
-            print("Corrected substances:")
-            print(pixel_operations.get_basis())
+            print "Corrected substances:"
+            print pixel_operations.get_basis()
 
     def out_scalars(self, pixel_operations=None):
         """
@@ -268,7 +268,7 @@ class ImageFrame:
             raise Exception("Error: source has to be set first")
 
         if self.__verbose:
-            print("Returning deconvolved images...")
+            print "Returning deconvolved images..."
 
         if pixel_operations.get_basis_dim() == 2:
             if mode is None:
@@ -279,4 +279,4 @@ class ImageFrame:
                 mode = [1, 2, 3]
 
         out_tmp = pixel_operations.transform_image(self.__image, mode=mode)
-        return [Image.fromarray(np.uint8(out_tmp[i])) for i in range(len(mode))]
+        return [Image.fromarray(out_tmp[i]) for i in range(len(mode))]
