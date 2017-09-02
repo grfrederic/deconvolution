@@ -1,14 +1,39 @@
 import numpy as np
 
+_epsilon = 0.0001
 
 def to_colour_1(x):
+    """Convert number to float in range [0,1]
+
+    Parameters
+    ----------
+    x : convertible to float
+        number that will be cut to interval [0,1]
+
+    Returns
+    -------
+    float
+        0 if x < 0, 1 if x > 1. In other cases x converted to float.
+    """
     x = float(x)
-    x = 0 if x < 0 else x
-    x = 1 if x > 1 else x
+    x = 0. if x < 0 else x
+    x = 1. if x > 1 else x
     return x
 
 
 def to_colour_255(x):
+    """Convert number to int in range [0,255]
+
+    Parameters
+    ----------
+    x : convertible to int
+        number that will be cut to interval [0,255]
+
+    Returns
+    -------
+    int
+        0 if x < 0, 255 if x > 255. In other cases x converted to int
+    """
     x = int(x)
     x = 0 if x < 0 else x
     x = 255 if x > 255 else x
@@ -16,26 +41,70 @@ def to_colour_255(x):
 
 
 def positive(x):
-    return 0.00001 if x <= 0 else x
+    """Make number be strictly positive
+
+    Parameters
+    ----------
+    x : convertible to float
+        a number
+
+    Returns
+    -------
+    float
+        _epsilon if x is not strictly positive, otherwise x
+    """
+    return _epsilon if x <= 0 else float(x)
 
 
 def negative(x):
-    return 0. if x >= 0 else x
+    """Make number be non-positive
+
+    Parameters
+    ----------
+    x : convertible to float
+        a number
+
+    Returns
+    -------
+    float
+        0 if x is positive, otherwise x converted to float
+    """
+    return 0. if x >= 0 else float(x)
 
 
 def check_positivity(r):
+    """Check if all numbers in a container are strictly positive
+
+    Parameters
+    ----------
+    r : iterable
+        an object with int or float values. Each element is checked whether it is positive
+
+    Returns
+    -------
+    bool
+        True if all elements in r are strictly positive, False otherwise
+    """
     for i in r:
         if i <= 0:
-            return 0
-    return 1
+            return False
+    return True
 
 
 def find_vals(a, r):
-    """
-    Get density coefficients from logarithmic basis matrix and pixel values.
-    :param a: logarithmic basis matrix, shape (3,2)
-    :param r: pixel values, shape (3,)
-    :return: coefficients, shape (2,)
+    """Get density coefficients from logarithmic basis matrix and pixel values.
+
+    Parameters
+    ----------
+    a : ndarray
+        logarithmic basis matrix, shape (3,2)
+    r : ndarray
+        pixel values, shape (3,)
+
+    Returns
+    -------
+    ndarray
+        density coefficients, shape (2,)
     """
     m00, m01, m11, v0, v1 = 0, 0, 0, 0, 0
     for i in range(3):
@@ -47,12 +116,18 @@ def find_vals(a, r):
     return -np.linalg.solve(np.array([[m00, m01], [m01, m11]]), np.array([v0, v1]))
 
 
-# Adjusts non-physical normals
 def get_physical_normal(n):
-    """
-    Given versor (unit vector), find nearest positive versor.
-    :param n: versor, shape (3,)
-    :return: positive versor, shape (3,)
+    """Given versor (unit vector), find the nearest positive versor.
+
+    Parameters
+    ----------
+    n : ndarray
+        versor (unit vector), shape (3,)
+
+    Returns
+    -------
+    ndarray
+        positive versor, shape (3,)
     """
     if (n[0] > 0 and n[1] > 0 and n[2] > 0) or (n[0] < 0 and n[1] < 0 and n[2] < 0):
         print("Best fitting plane non-physical, attempting to correct...")
@@ -67,6 +142,7 @@ def get_physical_normal(n):
         n[index] = 0
         n = n / np.linalg.norm(n)
         print("Correction error is: ", np.linalg.norm(m - n))
+
     # Correction for normal vector with exactly one zero component
     if (n[0] == 0 and n[1] * n[2] != 0) or (n[1] == 0 and n[2] * n[0] != 0) or (n[2] == 0 and n[0] * n[1] != 0):
         print("Best fitting plane non-physical, attempting to correct...")
@@ -86,10 +162,17 @@ def get_physical_normal(n):
 
 
 def get_basis_from_normal(n):
-    """
-    Finds physical colour basis from given physical (positive) versor (unit vector).
-    :param n: physical versor, shape (3,)
-    :return: (log) basis, shape (2,3)
+    """Finds physical colour basis from given physical (positive) versor (unit vector).
+
+    Parameters
+    ----------
+    n : ndarray
+        physical versor, shape (3,)
+
+    Returns
+    -------
+    ndarray
+        (log) basis, shape (2,3)
     """
     axial_flag = False
     if n[0] * n[1] * n[2] == 0:
@@ -138,10 +221,16 @@ def get_basis_from_normal(n):
 
 
 def orthonormal_rotation(v):
-    """
-    Gives a (orthonormal) rotation matrix transforming [1, 0, 0] to the given vector.
-    :param v: versor (unit vector), shape (3,)
-    :return: (3,3) numpy array
+    """Gives a (orthonormal) rotation matrix transforming [1, 0, 0] to the given vector.
+
+    Parameters
+    ----------
+    v : ndarray
+        versor (unit vector), shape (3,)
+    Returns
+    -------
+    ndarray
+        rotation matrix, shape (3,3)
     """
     if v[0] == 1.:
         return np.identity(3)
@@ -155,11 +244,21 @@ def orthonormal_rotation(v):
 
 
 def find_vector(mat):
+    """Find the eigenvector associated with the smallest eigenvalue.
+
+    ????????
+
+    Parameters
+    ----------
+    mat : ndarray
+        (2??,2??) list or numpy array
+
+    Returns
+    -------
+    ndarray
+        eigenvector, shape (3,)
     """
-    Find eigenvector with minimal eigenvalue.
-    :param mat: (2,2) list or numpy array
-    :return: numpy array (3,)
-    """
+    # here ->
     eig = np.linalg.eig([[mat[1, 1], mat[1, 2]], [mat[2, 1], mat[2, 2]]])
 
     minimum = eig[0][0]
