@@ -1,19 +1,14 @@
-"""@package deconvolution
-Python module for performing (automatic) colour deconvolution.
+"""deconvolution is a Python module for performing (automatic) colour deconvolution.
 """
 
 # -*- coding: utf-8 -*-
 import numpy as np
 
-import pixeloperations as po
-import imageframe as fr
+import deconvolution.pixeloperations as po
+import deconvolution.imageframe as fr
 
 
 class Deconvolution:
-    """
-    This class acts mainly as an interface. Most functions are implemented in either PixelOperations or ImageFrame.
-    """
-
     def complete_basis(self):
         """
         Automatically completes a zero or two vector basis to a two vector basis.
@@ -93,7 +88,22 @@ class Deconvolution:
         self.verbose = verbose
 
     def __init__(self, image=None, basis=None, verbose=False, background=None):
+        """
 
+        Parameters
+        ----------
+        image :
+
+        basis :
+
+        verbose :
+
+        background :
+
+        Notes
+        --------
+        This class acts mainly as an interface. Most functions are implemented in either PixelOperations or ImageFrame.
+        """
         self.pixel_operations = po.PixelOperations(basis=basis, background=background)
         self.image_frame = fr.ImageFrame(image=image, verbose=verbose)
 

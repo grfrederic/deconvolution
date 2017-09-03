@@ -1,5 +1,11 @@
+"""
+pixeloperations provides an implementation od PixelOperations class used by ImageFrame to interact with basis
+and background
+"""
+
 import numpy as np
-import auxlib as aux
+import deconvolution.auxlib as aux
+from copy import deepcopy
 
 _infzero = 0.00001
 _white255 = np.array([255, 255, 255], dtype=float)
@@ -7,45 +13,83 @@ _white1 = np.array([1, 1, 1], dtype=float)
 
 
 def _proper_vector_check(vect):
-    """
-    Checks if all list components are in [0,1]
-    :param vect (list or list of lists):
-    :return: true/false (bool)
+    """Checks if all list components are in [0,1]
+
+    Parameters
+    ----------
+    vect : array_like
+        Container with values to check
+
+    Returns
+    -------
+    bool
+        True if all components lie in the interval [0,1]. False otherwise
     """
     return not (np.amax(vect) > 1 or np.amin(vect) < 0)
 
 
 def _array_to_colour_255(arr):
-    """
-    Changes array of floats into arrays of colour entries
-    :param arr: numpy array of shape (x,y,3)
-    :return: array entries converted to integers from [0,255]
+    """Changes array of numbers into arrays of colour entries
+
+    Parameters
+    ---------
+    arr : ndarray
+        numpy array of shape (x,y,3) with float or int values
+
+    Returns
+    -------
+    ndarray
+        array entries converted to integers from [0,255], shape (x,y,3)
+
+    See Also
+    --------
+    _array_to_colour_1
+
     """
     return np.array(np.minimum(np.maximum(arr, 0), 255), dtype=np.uint8)
 
 
 def _array_to_colour_1(arr):
-    """
-    Changes array of floats into arrays of colour entries
-    :param arr: numpy array of shape (x,y,3)
-    :return: array entries converted to floats from [0,1]
+    """Changes array of numbers into arrays of colour entries
+
+    Parameters
+    ----------
+    arr: ndarray
+        shape (x,y,3)
+
+    Returns
+    -------
+    ndarray
+        array entries converted to floats from [0,1]
     """
     return np.array(np.minimum(np.maximum(arr, 0), 1), dtype=float)
 
 
 def _array_positive(arr):
-    """
-    Changes zeros to inf zeros
-    :param arr:
-    :return: numpy array with the same shape
+    """Changes zeros to inf zeros
+
+    Parameters
+    ----------
+    arr : ndarray
+        an array that may contain non-positive entries
+
+    Returns
+    -------
+    ndarray
+        an array of the same shape with strictly positive entries
     """
     return np.array(np.maximum(arr, _infzero), dtype=float)
+
+
+class WrongBasisError(Exception):
+    """Base vectors are (pseudo)linearly dependent or have corrupted and non-fixable entries"""
+    pass
 
 
 class PixelOperations:
     def __init__(self, basis=None, background=None):
         """
-        Initialising function
+        Class
         :param basis:
         :param background:
         """
@@ -55,16 +99,23 @@ class PixelOperations:
         self.set_background(background)
 
     def set_basis(self, basis):
-        """
-        Sets basis
-        :param basis:
+        """Sets basis
+
+        Parameters
+        ----------
+        basis : array_like
+            a list (or numpy array) with three-dimensional vectors. Can have 0, 1, 2 or 3 vectors.
+
+        Raises
+        ------
+        WrongBasisError
         """
         if basis is None or len(basis) == 0:
             self.__basis = []
             self.__basis_dim = 0
 
         elif not _proper_vector_check(basis):
-            raise Exception("Check components of the base vectors")
+            raise WrongBasisError("Check components of the base vectors")
 
         else:
             self.__basis_dim = len(basis)
@@ -74,51 +125,92 @@ class PixelOperations:
         if self.check_basis():
             self.__basis_log_matrix = np.transpose(-np.log(self.__basis))
             if np.linalg.matrix_rank(self.__basis_log_matrix) < self.get_basis_dim():
-                raise Exception("Base vectors are (pseudo)linearly dependent")
+                raise WrongBasisError("Base vectors are (pseudo)linearly dependent")
 
     def set_background(self, background=None):
-        """
-        Sets background
-        :param background:
+        """Sets background
+
+        Parameters
+        ----------
+        background : array_like
+            array with shape (3,) or list with three entries. Entries should be numbers from interval (0, 1]
+
+        Raises
+        ------
+        ValueError
         """
         if background is None:
             self.__background = _white1
             return
 
         if not _proper_vector_check(background):
-            raise Exception("Check components of the background vector")
+            raise ValueError("Check components of the background vector")
 
         self.__background = _array_positive(_array_to_colour_1(background))
 
     def check_basis(self):
-        """
-        Checks if the basis has two or three vectors
-        :return: bool
+        """Checks if the basis is complete (has exactly two or three vectors)
+
+        Returns
+        -------
+        bool
+            True if it is, False otherwise
         """
         return self.__basis.shape in [(2, 3), (3, 3)]
 
     def get_basis_dim(self):
-        """
-        Returns number of base vectors
-        :return: uint
+        """Returns number of base vectors
+
+        Returns
+        -------
+        int
+            number of base vectors
         """
         return self.__basis_dim
 
     def get_basis(self):
+        """Returns copy of basis
+
+        Returns
+        -------
+        ndarray
+            array with basis. It can be empty or have shape (x,3) where x is 1, 2 or 3
         """
-        Returns basis
-        :return: basis
-        """
-        return self.__basis
+        return deepcopy(self.__basis)
 
     def get_background(self):
+        """Returns copy of the set background vector
+
+        Returns
+        -------
+        ndarray
+            background (numpy array)
         """
-        Returns background vector
-        :return: background (numpy array)
-        """
-        return self.__background
+        return deepcopy(self.__background)
 
     def __transform_image2(self, image, mode):
+        """Using basis with two vectors produce new images
+
+        Parameters
+        ----------
+        image : ndarray
+            shape (x,y,3)
+        mode : array_like
+            if list contains:
+                0 - image generated from white light and two stains
+                1 - white light and first stain
+                2 - white light and second stain
+                3 - use image and remove both stains to obtain the rest
+
+        Returns
+        -------
+        list
+            list of ndarrays with shape same as image according to mode
+
+        See Also
+        --------
+        PixelOperations.__transform_image3
+        """
         r = np.array(image, dtype=float)
 
         v, u = self.__basis
@@ -143,6 +235,29 @@ class PixelOperations:
         return dec
 
     def __transform_image3(self, image, mode):
+        """Using basis with three vectors produce new images
+
+        Parameters
+        ----------
+        image : ndarray
+            shape (x,y,3)
+            mode : array_like
+                if list contains:
+                    0 - image generated from white light and three stains
+                    1 - white light and first stain
+                    2 - white light and second stain
+                    3 - white light and third stain
+                    4 - use image and remove both stains to obtain the rest
+
+        Returns
+        -------
+        list
+            list of ndarrays with shape same as image according to mode
+
+        See Also
+        --------
+        PixelOperations.__transform_image2
+        """
         r = np.array(image, dtype=float)
 
         v, u, w = self.__basis
@@ -170,18 +285,42 @@ class PixelOperations:
         return dec
 
     def transform_image(self, image, mode=None):
+        """Transforms given image array and gives output accordingly to iterable mode
+
+        Parameters
+        ----------
+        image : ndarray
+            shape (x,y,3)
+        mode : array_like
+            if list contains:
+                    0 - image generated from white light and all stains
+                    1 - white light and first stain
+                    2 - white light and second stain
+                    (3) - white light and third stain (only if basis with three vectors has been set)
+
+                    3 (4) - use image and remove both stains to obtain the rest (4 if three vectors has been set)
+
+        Returns
+        -------
+        list
+            list of ndarrays with shape same as image according to mode
+
+        Raises
+        ------
+        WrongBasisError
+
+        See Also
+        --------
+        PixelOperations.__transform_image2
+        PixelOperations.__transform_image3
         """
-        Transforms given image array and gives output accordingly to iterable mode
-        :param image:
-        :param mode:
-        :return: list of images with dimension of mode
-        """
+
         if self.__basis_dim == 2:
             return self.__transform_image2(image, [1, 2] if mode is None else mode)
         elif self.__basis_dim == 3:
             return self.__transform_image3(image, [1, 2, 3] if mode is None else mode)
         else:
-            raise Exception("You can't transform image until you have a proper basis")
+            raise WrongBasisError("You can't transform image until you have a proper basis")
 
     def __get_coef2(self, pixel):
         r = np.array(pixel, dtype=float)
