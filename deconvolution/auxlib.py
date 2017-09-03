@@ -1,6 +1,10 @@
+"""auxlib module provides several useful low-level functions as number thresholding or a couple of linear algebra
+operations"""
+
 import numpy as np
 
 _epsilon = 0.0001
+
 
 def to_colour_1(x):
     """Convert number to float in range [0,1]
@@ -244,21 +248,21 @@ def orthonormal_rotation(v):
 
 
 def find_vector(mat):
-    """Find the eigenvector associated with the smallest eigenvalue.
+    """Special eigenvector of a special matrix.
 
-    ????????
+    Finds eigenvector associated with the smallest eigenvalue and turns it into a unit vector (versor). Assumes that
+    matrix is in special coordinates such first row and first column (`mat[0,:]`, `mat[:,0]`) do not matter
 
     Parameters
     ----------
     mat : ndarray
-        (2??,2??) list or numpy array
+        (3,3) list or numpy array
 
     Returns
     -------
     ndarray
-        eigenvector, shape (3,)
+        normed eigenvector, shape (3,)
     """
-    # here ->
     eig = np.linalg.eig([[mat[1, 1], mat[1, 2]], [mat[2, 1], mat[2, 2]]])
 
     minimum = eig[0][0]

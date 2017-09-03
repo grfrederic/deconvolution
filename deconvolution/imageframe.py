@@ -1,16 +1,27 @@
+"""
+imageframe provides ImageFrame class that is a backend of deconvolution algorithm
+"""
+
 import numpy as np
 #from multiprocessing import Pool
 from PIL import Image
-import auxlib as aux
+import deconvolution.auxlib as aux
+from deconvolution.pixeloperations import WrongBasisError
+from functools import reduce
 
 
 class ImageFrame:
     def __init__(self, image=None, threads=1, verbose=False):
-        """
-        Initialising function
-        :param image: PIL Image, image to deconvolve
-        :param threads: int, number of threads to use
-        :param verbose: bool, default True
+        """Class that can be used to deconvolve an image
+
+        Parameters
+        ----------
+        image : PIL Image
+            image to deconvolve
+        threads : int,
+            number of threads to use
+        verbose : bool
+            whether to print internal processing information to std out (e.g. for debugging purposes or process control)
         """
         self.__verbose = False
         if verbose:
@@ -23,31 +34,47 @@ class ImageFrame:
         self.__threads, self.__inertia_matrix = threads, None
 
     def set_image(self, image):
-        """
-        Sets new image for deconvolution.
-        :param image: PIL Image
+        """Sets new image to deconvolve.
+        Parameters
+        ----------
+        image : PIL Image
+            image to deconvolve
         """
         self.__image = np.asarray(image).copy()
 
     def __source_set(self):
-        """
-        Source set?
-        :return: bool
+        """Check whether an image has been set
+
+        Returns
+        -------
+        bool
+            True if it has been set, False otherwise
         """
         return self.__image is not None
 
     def __source_sampled(self):
-        """
-        Source sampled?
-        :return: bool
+        """Check whether the inertia matrix has been calculated
+
+        Returns
+        -------
+        bool
+            True if the inertia matrix calculation has been finished
         """
         return self.__inertia_matrix is not None
 
     def sample_source(self, pixel_operations, sample_density=5):
-        """
-        Creates __inertia_matrix used for finding optimal bases.
-        :param pixel_operations: used for background info
-        :param sample_density: precision of sampling
+        """Creates inertia matrix used for finding optimal bases.
+
+        Parameters
+        ----------
+        pixel_operations : PixelOperations
+            an object used for background info
+        sample_density : int
+            precision of sampling
+
+        See Also
+        --------
+        PixelOperations
         """
         if not self.__source_set:
             raise Exception("No source set")
@@ -93,9 +120,16 @@ class ImageFrame:
             print("Done.")
 
     def __find_substance_two(self, pixel_operations):
-        """
-        Used when TWO substances are needed, and NONE is known.
-        :param pixel_operations: used for setting new basis 
+        """Used when two substances are needed, and none of them is known.
+
+        Parameters
+        ----------
+        pixel_operations : PixelOperations
+            used for setting new basis
+
+        See Also
+        --------
+        PixelOperations
         """
         if self.__verbose:
             print("Searching for best fitting substances...")
@@ -128,9 +162,16 @@ class ImageFrame:
             print(subs)
 
     def __find_substance_one(self, pixel_operations):
-        """
-        Used when ONE additional substance is needed, and ONE is already known.
-        :param pixel_operations: used for setting new basis and getting known substance
+        """Used when one additional substance is needed, and one is already known.
+
+        Parameters
+        ----------
+        pixel_operations : PixelOperations
+            used for setting new basis and getting known substance
+
+        See Also
+        --------
+        PixelOperations
         """
         if self.__verbose:
             print("Searching for second best fitting substance...")
@@ -167,10 +208,21 @@ class ImageFrame:
             print(subs)
 
     def complete_basis(self, pixel_operations):
-        """
-        Checks dimensionality and completes basis accordingly.
-        Performs sampling automatically if needed.
-        :param pixel_operations: used for interaction with basis
+        """Checks dimensionality and completes basis accordingly. Performs sampling automatically if needed.
+
+        Parameters
+        ----------
+        pixel_operations : PixelOperations
+            used for interactions with basis
+
+        See Also
+        --------
+        PixelOperations
+
+        Raises
+        ------
+        Exception
+            source has not been set yet (note - this will be replaced for another type of error)
         """
         if not self.__source_set():
             raise Exception("Set source first")
@@ -187,17 +239,32 @@ class ImageFrame:
             print("Basis already complete")
 
     def resolve_dependencies(self, pixel_operations=None, belligerency=0.3):
-        """
-        Tries to minimize mutual dependence of deconvolved substance density fields
-        :param pixel_operations: used for interaction with basis
-        :param belligerency: aggressiveness of corrections
+        """Tries to minimize mutual dependence of deconvolved substance density fields
+
+        Parameters
+        ----------
+        pixel_operations : PixelOperations
+            used for setting new basis and getting known substance
+        belligerency : float
+            high values lead to greater contrast in stains
+
+        See Also
+        --------
+        PixelOperations
+
+        Raises
+        ------
+        WrongBasisError
+            basis has wrong number of vectors
+        Exception
+            second substance is extremely negative compared to the `belligerency`. It should never happen
         """
         if pixel_operations.get_basis_dim() != 2:
-            raise Exception("Exactly two element basis needed for resolve_dependencies")
+            raise WrongBasisError("Exactly two element basis needed for resolve_dependencies")
 
         # collecting data
         if self.__verbose:
-            print "Decomposition info:\n"
+            print("Decomposition info:\n")
 
         surf = len(self.__image[0]) * len(self.__image[0])
 
@@ -211,10 +278,10 @@ class ImageFrame:
         b_mean = b_pos_sum/surf
 
         if self.__verbose:
-            print "First substance:"
-            print "Negativity: {} Mean value: {}".format(a_neg_sum/aux.positive(a_pos_sum), a_mean)
-            print "Second substance:"
-            print "Negativity: {} Mean value: {}".format(b_neg_sum/aux.positive(b_pos_sum), b_mean)
+            print("First substance:")
+            print("Negativity: {} Mean value: {}".format(a_neg_sum/aux.positive(a_pos_sum), a_mean))
+            print("Second substance:")
+            print("Negativity: {} Mean value: {}".format(b_neg_sum/aux.positive(b_pos_sum), b_mean))
 
         min_x = belligerency * a_mean
         min_y = belligerency * b_mean
@@ -235,7 +302,7 @@ class ImageFrame:
         k2 = np.min(safe_vec_div(b, a))
 
         if self.__verbose:
-            print "Mutual dependencies k1, k2 = {}, {}".format(k1, k2)
+            print("Mutual dependencies k1, k2 = {}, {}".format(k1, k2))
 
         basis = pixel_operations.get_basis()
         pixel_operations.set_basis(
@@ -244,31 +311,49 @@ class ImageFrame:
         )
 
         if self.__verbose:
-            print "Corrected substances:"
-            print pixel_operations.get_basis()
+            print("Corrected substances:")
+            print(pixel_operations.get_basis())
 
     def out_scalars(self, pixel_operations=None):
-        """
-        Get scalar density fields of substances.
-        :return: list of scalar fields (numpy arrays) 
+        """Get scalar density fields of substances.
+
+        Returns
+        -------
+        list
+            list of scalar fields (numpy arrays)
         """
         return pixel_operations.get_coef(self.__image)
 
     def out_images(self, pixel_operations=None, mode=None):
-        """
-        Get list of deconvolved images.
-        :param pixel_operations: basis interaction
-        :param mode: which images to return (see ref. table in documentation TODO)
-        :return: list of PIL Images
+        """Get list of deconvolved images.
+
+        Parameters
+        ----------
+        pixel_operations : PixelOperations
+            object for interaction with basis
+        mode : list
+            which images to return
+
+        Returns
+        -------
+        list
+            list of PIL Images
+
+        Raises
+        ------
+        WrongBasisError
+            basis needs to have at least two vectors
+        Exception
+            you need image to deconvolve
         """
         if pixel_operations.get_basis_dim() < 2:
-            raise Exception("At least two elements in basis needed")
+            raise WrongBasisError("At least two elements in basis needed")
 
         if not self.__source_set():
             raise Exception("Error: source has to be set first")
 
         if self.__verbose:
-            print "Returning deconvolved images..."
+            print("Returning deconvolved images...")
 
         if pixel_operations.get_basis_dim() == 2:
             if mode is None:
