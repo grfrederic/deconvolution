@@ -2,8 +2,6 @@
 """
 
 # -*- coding: utf-8 -*-
-import numpy as np
-
 import deconvolution.pixeloperations as po
 import deconvolution.imageframe as fr
 
@@ -81,7 +79,6 @@ class Deconvolution:
         """
         self.image_frame.set_image(in_image)
 
-    # set basis and background check dimensionality before passing further
     def set_basis(self, basis):
         """Sets initial basis.
 
@@ -90,13 +87,6 @@ class Deconvolution:
         basis : array_like
             list of lists or numpy array. Basis can be of one of the following shapes: (0,), (1, 3), (2, 3), (3, 3).
         """
-        basis = np.array(basis, dtype=float)
-
-        if basis.shape not in [(0,), (1, 3), (2, 3), (3, 3)]:
-            if self.verbose:
-                print("Basis has invalid dimensions, and was not set.", basis)
-            return 1
-
         self.pixel_operations.set_basis(basis)
 
     def set_background(self, background):
@@ -107,12 +97,6 @@ class Deconvolution:
         background : array_like
             colour vector (three components, each in [0,1])
         """
-        background = np.array(background, dtype=float)
-        if np.shape(background) != (3,):
-            if self.verbose:
-                print("Background vector has invalid dimensions.")
-                return 1
-
         self.pixel_operations.set_background(background)
 
     def set_verbose(self, verbose):
@@ -123,7 +107,10 @@ class Deconvolution:
         verbose : bool
             set to True prints to the std output internal actions
         """
-        self.verbose = verbose
+        if isinstance(verbose, bool):
+            self.verbose = verbose
+        else:
+            raise ValueError("Variable verbose has to be bool.")
 
     def __init__(self, image=None, basis=None, verbose=False, background=None):
         """High-level class able to deconvolve PIL Image without any effort and gain other images and stain densities
@@ -143,11 +130,11 @@ class Deconvolution:
         --------
         This class acts mainly as an interface. Most functions are implemented in either PixelOperations or ImageFrame.
         """
+
         self.pixel_operations = po.PixelOperations(basis=basis, background=background)
         self.image_frame = fr.ImageFrame(image=image, verbose=verbose)
 
-        self.verbose = False
         self.sample_flag = False
+        self.verbose = False
 
-        if verbose is not None:
-            self.set_verbose(verbose)
+        self.set_verbose(verbose)

@@ -3,10 +3,11 @@ imageframe provides ImageFrame class that is a backend of deconvolution algorith
 """
 
 import numpy as np
-#from multiprocessing import Pool
+# from multiprocessing import Pool
+
 from PIL import Image
 import deconvolution.auxlib as aux
-from deconvolution.pixeloperations import WrongBasisError
+import deconvolution.exceptions as ex
 from functools import reduce
 
 
@@ -24,8 +25,7 @@ class ImageFrame:
             whether to print internal processing information to std out (e.g. for debugging purposes or process control)
         """
         self.__verbose = False
-        if verbose:
-            self.__verbose = True
+        self.set_verbose(verbose)
 
         self.__image = None
         if image is not None:
@@ -33,14 +33,35 @@ class ImageFrame:
 
         self.__threads, self.__inertia_matrix = threads, None
 
+    def set_verbose(self, verbose):
+        """Change verbosity.
+
+        Parameters
+        ----------
+        verbose : bool
+            set to True prints to the std output internal actions
+        """
+        if isinstance(verbose, bool):
+            self.__verbose = verbose
+        else:
+            raise ValueError("Variable verbose has to be bool.")
+
     def set_image(self, image):
         """Sets new image to deconvolve.
         Parameters
         ----------
         image : PIL Image
             image to deconvolve
+
+        Raises
+        ----------
+        ValueError
+            Image has to be a PIL Image
         """
-        self.__image = np.asarray(image).copy()
+        if isinstance(image, Image.Image):
+            self.__image = np.asarray(image).copy()
+        else:
+            raise ValueError("image has to be a PIL Image.")
 
     def __source_set(self):
         """Check whether an image has been set
@@ -72,12 +93,16 @@ class ImageFrame:
         sample_density : int
             precision of sampling
 
+        Raises
+        --------
+        ImageException
+            No image has been set
         See Also
         --------
         PixelOperations
         """
         if not self.__source_set:
-            raise Exception("No source set")
+            raise ex.ImageException("No source set")
 
         if self.__verbose:
             print("Sampling source...")
@@ -169,6 +194,11 @@ class ImageFrame:
         pixel_operations : PixelOperations
             used for setting new basis and getting known substance
 
+        Raises
+        ----------
+        BasisException
+            Empty basis
+
         See Also
         --------
         PixelOperations
@@ -177,7 +207,7 @@ class ImageFrame:
             print("Searching for second best fitting substance...")
 
         if pixel_operations.get_basis_dim() == 0:  # Basis requires AT LEAST 1 vector in basis
-            raise Exception("Empty basis")
+            raise ex.BasisException("Empty basis")
 
         basis = pixel_operations.get_basis()
         v = np.array([-np.log(basis[0][0]), -np.log(basis[0][1]), -np.log(basis[0][2])])
@@ -221,11 +251,11 @@ class ImageFrame:
 
         Raises
         ------
-        Exception
-            source has not been set yet (note - this will be replaced by another type of error)
+        ImageException
+            image has not been set yet
         """
         if not self.__source_set():
-            raise Exception("Set source first")
+            raise ex.ImageException("Set source first")
 
         if not self.__source_sampled():
             self.sample_source(pixel_operations)
@@ -254,13 +284,13 @@ class ImageFrame:
 
         Raises
         ------
-        WrongBasisError
+        BasisException
             basis has wrong number of vectors
         Exception
-            second substance is extremely negative compared to the `belligerency`. It should never happen
+            second substance is extremely negative compared to the `belligerency`. This should never happen
         """
         if pixel_operations.get_basis_dim() != 2:
-            raise WrongBasisError("Exactly two element basis needed for resolve_dependencies")
+            raise ex.BasisException("Exactly two element basis needed for resolve_dependencies")
 
         # collecting data
         if self.__verbose:
@@ -347,16 +377,16 @@ class ImageFrame:
 
         Raises
         ------
-        WrongBasisError
+        BasisException
             basis needs to have at least two vectors
-        Exception
+        ImageException
             you need image to deconvolve
         """
         if pixel_operations.get_basis_dim() < 2:
-            raise WrongBasisError("At least two elements in basis needed")
+            raise ex.BasisException("At least two elements in basis needed")
 
         if not self.__source_set():
-            raise Exception("Error: source has to be set first")
+            raise ex.ImageException("Error: source has to be set first")
 
         if self.__verbose:
             print("Returning deconvolved images...")

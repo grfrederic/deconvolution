@@ -15,7 +15,7 @@ setup(
     license='BSD 3-Clause License',
     packages=['deconvolution'],
 
-    install_requires=['numpy', 'PIL'],
+    install_requires=['numpy', 'Pillow'],
 
     # if anybody wants to add non-py files, he must uncomment the following line and add them in MANIFEST.in
     # include_package_data=True

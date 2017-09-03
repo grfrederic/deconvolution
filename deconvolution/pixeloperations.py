@@ -5,6 +5,7 @@ and background
 
 import numpy as np
 import deconvolution.auxlib as aux
+import deconvolution.exceptions as ex
 from copy import deepcopy
 
 _infzero = 0.00001
@@ -81,15 +82,10 @@ def _array_positive(arr):
     return np.array(np.maximum(arr, _infzero), dtype=float)
 
 
-class WrongBasisError(Exception):
-    """Base vectors are (pseudo)linearly dependent or have corrupted and non-fixable entries"""
-    pass
-
-
 class PixelOperations:
     def __init__(self, basis=None, background=None):
         """
-        Class using to interact with basis and background (e.g. transforming pixels using this)
+        Class used to interact with basis and background (e.g. transforming pixels using this)
 
         Parameters
         ----------
@@ -122,14 +118,21 @@ class PixelOperations:
 
         Raises
         ------
-        WrongBasisError
+        BasisException
+            Erroneous basis
         """
+
         if basis is None or len(basis) == 0:
             self.__basis = []
             self.__basis_dim = 0
 
+        basis = np.array(basis, dtype=float)
+
+        if basis.shape not in [(0,), (1, 3), (2, 3), (3, 3)]:
+            raise ex.BasisException("Basis has invalid dimensions, and was not set.")
+
         elif not _proper_vector_check(basis):
-            raise WrongBasisError("Check components of the base vectors")
+            raise ex.BasisException("Check components of the base vectors.")
 
         else:
             self.__basis_dim = len(basis)
@@ -139,7 +142,7 @@ class PixelOperations:
         if self.check_basis():
             self.__basis_log_matrix = np.transpose(-np.log(self.__basis))
             if np.linalg.matrix_rank(self.__basis_log_matrix) < self.get_basis_dim():
-                raise WrongBasisError("Base vectors are (pseudo)linearly dependent")
+                raise ex.BasisException("Base vectors are (pseudo)linearly dependent.")
 
     def set_background(self, background=None):
         """Sets background
@@ -152,13 +155,20 @@ class PixelOperations:
         Raises
         ------
         ValueError
+            Erroneous background vector
         """
+
         if background is None:
             self.__background = _white1
             return
 
+        background = np.array(background, dtype=float)
+
+        if background.shape is not (3,):
+            raise ValueError("Check background vector shape.")
+
         if not _proper_vector_check(background):
-            raise ValueError("Check components of the background vector")
+            raise ValueError("Check components of the background vector.")
 
         self.__background = _array_positive(_array_to_colour_1(background))
 
@@ -317,8 +327,8 @@ class PixelOperations:
 
         Raises
         ------
-        WrongBasisError
-
+        Exception
+            No basis has been set
         See Also
         --------
         PixelOperations.__transform_image2
@@ -330,7 +340,7 @@ class PixelOperations:
         elif self.__basis_dim == 3:
             return self.__transform_image3(image, [1, 2, 3] if mode is None else mode)
         else:
-            raise WrongBasisError("You can't transform image until you have a proper basis")
+            raise Exception("No proper basis set.")
 
     def __get_coef2(self, pixel):
         r = np.array(pixel, dtype=float)
@@ -364,16 +374,18 @@ class PixelOperations:
         Raises
         ------
         Exception
-            Basis has not been set yet. To be replaced by another Error
+            No basis has been set
+        ValueError
+            Image channel number not supported.
         """
         if image.shape[-1] != 3:
-            raise Exception("Image is corrupted - pixel dimensionality is wrong")
+            raise ValueError("Pixel dimensionality is wrong. Maybe it has an alpha channel?")
 
         if self.get_basis_dim() == 2:
             fv = np.vectorize(self.__get_coef2, signature='(n)->(k)')
         elif self.get_basis_dim() == 3:
             fv = np.vectorize(self.__get_coef3, signature='(n)->(k)')
         else:
-            raise Exception("Basis of dimension 2 or 3 has not been set yet")
+            raise Exception("Basis of dimension 2 or 3 has not been set.")
 
         return np.array(fv(image)).transpose((2, 0, 1))
