@@ -1,5 +1,5 @@
 """
-pixeloperations provides an implementation od PixelOperations class used by ImageFrame to interact with basis
+pixeloperations provides an implementation of PixelOperations class used by ImageFrame to interact with basis
 and background
 """
 
@@ -89,9 +89,23 @@ class WrongBasisError(Exception):
 class PixelOperations:
     def __init__(self, basis=None, background=None):
         """
-        Class
-        :param basis:
-        :param background:
+        Class using to interact with basis and background (e.g. transforming pixels using this)
+
+        Parameters
+        ----------
+        basis : array_like
+            a list (or numpy array) with three-dimensional vectors. Can have 0, 1, 2 or 3 vectors
+        background : array_like
+            array with shape (3,) or list with three entries. Entries should be numbers from interval (0, 1]
+
+        See Also
+        --------
+        PixelOperations.set_basis
+        PixelOperations.set_background
+
+        Notes
+        -----
+        It is equivalent to setting basis and background using setters
         """
         self.__basis, self.__basis_dim, self.__background, self.__basis_log_matrix = None, None, None, None
 
@@ -104,7 +118,7 @@ class PixelOperations:
         Parameters
         ----------
         basis : array_like
-            a list (or numpy array) with three-dimensional vectors. Can have 0, 1, 2 or 3 vectors.
+            a list (or numpy array) with three-dimensional vectors. Can have 0, 1, 2 or 3 vectors
 
         Raises
         ------
@@ -159,7 +173,7 @@ class PixelOperations:
         return self.__basis.shape in [(2, 3), (3, 3)]
 
     def get_basis_dim(self):
-        """Returns number of base vectors
+        """Returns number of the base vectors
 
         Returns
         -------
@@ -169,7 +183,7 @@ class PixelOperations:
         return self.__basis_dim
 
     def get_basis(self):
-        """Returns copy of basis
+        """Returns copy of the basis
 
         Returns
         -------
@@ -179,7 +193,7 @@ class PixelOperations:
         return deepcopy(self.__basis)
 
     def get_background(self):
-        """Returns copy of the set background vector
+        """Returns copy of the background vector
 
         Returns
         -------
@@ -206,10 +220,6 @@ class PixelOperations:
         -------
         list
             list of ndarrays with shape same as image according to mode
-
-        See Also
-        --------
-        PixelOperations.__transform_image3
         """
         r = np.array(image, dtype=float)
 
@@ -339,10 +349,22 @@ class PixelOperations:
         return sol
 
     def get_coef(self, image):
-        """
-        For a given image returns deconvolution coefficient field
-        :param image:
-        :return: list of numpy arrays; length of the basis dimension
+        """For a given image returns deconvolution coefficient field
+
+        Parameters
+        ----------
+        image : numpy array
+            array representing image, shape (x,y,3) and entries [0,255]
+
+        Returns
+        -------
+        list
+            length of the list is number of vectors in the basis. Each entry is numpy array with shape (x,y)
+            representing field of exponent coefficients
+        Raises
+        ------
+        Exception
+            Basis has not been set yet. To be replaced by another Error
         """
         if image.shape[-1] != 3:
             raise Exception("Image is corrupted - pixel dimensionality is wrong")
