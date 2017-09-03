@@ -68,7 +68,7 @@ class ImageFrame:
         Parameters
         ----------
         pixel_operations : PixelOperations
-            an object used for background info
+            an object used for manipulation with basis and background
         sample_density : int
             precision of sampling
 
@@ -222,7 +222,7 @@ class ImageFrame:
         Raises
         ------
         Exception
-            source has not been set yet (note - this will be replaced for another type of error)
+            source has not been set yet (note - this will be replaced by another type of error)
         """
         if not self.__source_set():
             raise Exception("Set source first")
@@ -320,7 +320,7 @@ class ImageFrame:
         Returns
         -------
         list
-            list of scalar fields (numpy arrays)
+            list of numpy arrays (length is the dimensionality of basis), each with exponent field of coefficient
         """
         return pixel_operations.get_coef(self.__image)
 
@@ -331,8 +331,14 @@ class ImageFrame:
         ----------
         pixel_operations : PixelOperations
             object for interaction with basis
-        mode : list
-            which images to return
+        mode : array_like
+            if list contains:
+                0 - image generated from white light and all stains
+                1 - white light and first stain
+                2 - white light and second stain
+                (3) - white light and third stain (only if basis with three vectors has been set)
+
+                3 (4) - use image and remove both stains to obtain the rest (4 if three vectors has been set)
 
         Returns
         -------
