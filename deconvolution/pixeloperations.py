@@ -224,7 +224,8 @@ class PixelOperations:
                 0 - image generated from white light and two stains
                 1 - white light and first stain
                 2 - white light and second stain
-                3 - use image and remove both stains to obtain the rest
+
+                -1 - use image and remove both stains to obtain the rest
 
         Returns
         -------
@@ -249,7 +250,7 @@ class PixelOperations:
                 dec.append(_array_to_colour_255(_white255 * (vf ** af)))
             elif i == 2:
                 dec.append(_array_to_colour_255(_white255 * (uf ** bf)))
-            elif i == 3:
+            elif i == -1:
                 dec.append(_array_to_colour_255(r * (vf ** -af) * (uf ** -bf)))
 
         return dec
@@ -261,13 +262,14 @@ class PixelOperations:
         ----------
         image : ndarray
             shape (x,y,3)
-            mode : array_like
-                if list contains:
-                    0 - image generated from white light and three stains
-                    1 - white light and first stain
-                    2 - white light and second stain
-                    3 - white light and third stain
-                    4 - use image and remove both stains to obtain the rest
+        mode : array_like
+            if list contains:
+                0 - image generated from white light and three stains
+                1 - white light and first stain
+                2 - white light and second stain
+                3 - white light and third stain
+
+                -1 - use image and remove all the stains to obtain the rest
 
         Returns
         -------
@@ -299,7 +301,7 @@ class PixelOperations:
                 dec.append(_array_to_colour_255(_white255 * (uf ** bf)))
             elif i == 3:
                 dec.append(_array_to_colour_255(_white255 * (wf ** cf)))
-            elif i == 4:
+            elif i == -1:
                 dec.append(_array_to_colour_255(r * (vf ** -af) * (uf ** -bf) * (wf ** -cf)))
 
         return dec
@@ -313,12 +315,12 @@ class PixelOperations:
             shape (x,y,3)
         mode : array_like
             if list contains:
-                    0 - image generated from white light and all stains
-                    1 - white light and first stain
-                    2 - white light and second stain
-                    (3) - white light and third stain (only if basis with three vectors has been set)
+                0 - image generated from white light and all stains
+                1 - white light and first stain
+                2 - white light and second stain
+                3 - white light and third stain (only if basis with three vectors has been set)
 
-                    3 (4) - use image and remove both stains to obtain the rest (4 if three vectors has been set)
+                -1 - use image and remove all the stains to obtain the rest
 
         Returns
         -------
@@ -327,7 +329,7 @@ class PixelOperations:
 
         Raises
         ------
-        Exception
+        BasisException
             No basis has been set
         See Also
         --------
@@ -340,7 +342,7 @@ class PixelOperations:
         elif self.__basis_dim == 3:
             return self.__transform_image3(image, [1, 2, 3] if mode is None else mode)
         else:
-            raise Exception("No proper basis set.")
+            raise ex.BasisException("No proper basis set.")
 
     def __get_coef2(self, pixel):
         r = np.array(pixel, dtype=float)
@@ -373,7 +375,7 @@ class PixelOperations:
             representing field of exponent coefficients
         Raises
         ------
-        Exception
+        BasisException
             No basis has been set
         ValueError
             Image channel number not supported.
@@ -386,6 +388,6 @@ class PixelOperations:
         elif self.get_basis_dim() == 3:
             fv = np.vectorize(self.__get_coef3, signature='(n)->(k)')
         else:
-            raise Exception("Basis of dimension 2 or 3 has not been set.")
+            raise ex.BasisException("Basis of dimension 2 or 3 has not been set.")
 
         return np.array(fv(image)).transpose((2, 0, 1))

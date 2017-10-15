@@ -366,9 +366,9 @@ class ImageFrame:
                 0 - image generated from white light and all stains
                 1 - white light and first stain
                 2 - white light and second stain
-                (3) - white light and third stain (only if basis with three vectors has been set)
+                3- white light and third stain (only if basis with three vectors has been set)
 
-                3 (4) - use image and remove both stains to obtain the rest (4 if three vectors has been set)
+                -1 - use image and remove all the stains to obtain the rest
 
         Returns
         -------
@@ -382,22 +382,11 @@ class ImageFrame:
         ImageException
             you need image to deconvolve
         """
-        if pixel_operations.get_basis_dim() < 2:
-            raise ex.BasisException("At least two elements in basis needed")
-
         if not self.__source_set():
             raise ex.ImageException("Error: source has to be set first")
 
         if self.__verbose:
             print("Returning deconvolved images...")
-
-        if pixel_operations.get_basis_dim() == 2:
-            if mode is None:
-                mode = [1, 2]
-
-        if pixel_operations.get_basis_dim() == 3:
-            if mode is None:
-                mode = [1, 2, 3]
 
         out_tmp = pixel_operations.transform_image(self.__image, mode=mode)
         return [Image.fromarray(out_tmp[i]) for i in range(len(mode))]

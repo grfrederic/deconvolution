@@ -23,7 +23,6 @@ class Deconvolution:
 
     def out_images(self, mode=None):
         """Get deconvolved images
-        :param mode: which substances (or reconstructed/remainder), None means all
 
         Parameters
         ----------
@@ -32,9 +31,9 @@ class Deconvolution:
                 0 - image generated from white light and all stains
                 1 - white light and first stain
                 2 - white light and second stain
-                (3) - white light and third stain (only if basis with three vectors has been set)
+                3 - white light and third stain (only if basis with three vectors has been set)
 
-                3 (4) - use image and remove both stains to obtain the rest (4 if three vectors has been set)
+                -1 - use image and remove all the stains to obtain the rest
 
         Returns
         -------
