@@ -121,47 +121,60 @@ def find_vals(a, r):
 
 
 def get_physical_normal(n):
-    """Given versor (unit vector), find the nearest positive versor.
+    """Given unit vector, find the nearest physical unit vector.
+       A physical unit vector can't have all component positive,
+       can't have all components negative, and can't have exactly
+       one zero component.
 
     Parameters
     ----------
     n : ndarray
-        versor (unit vector), shape (3,)
+        unit vector, shape (3,)
 
     Returns
     -------
     ndarray
-        positive versor, shape (3,)
+        physical unit vector, shape (3,)
     """
-    if (n[0] > 0 and n[1] > 0 and n[2] > 0) or (n[0] < 0 and n[1] < 0 and n[2] < 0):
-        print("Best fitting plane non-physical, attempting to correct...")
-        minimum = n[0] ^ 2
+
+    one_zero = (n[0] == 0 and n[1] * n[2] != 0) or\
+               (n[1] == 0 and n[2] * n[0] != 0) or\
+               (n[2] == 0 and n[0] * n[1] != 0)
+
+    if not check_positivity(n) and not check_positivity(-n) and not one_zero:
+        return n
+
+    print("Best fitting plane non-physical, attempting to correct...")
+    m = n
+
+    if check_positivity(n) or check_positivity(-n):
+        minimum = np.abs(n[0])
         index = 0
         for i in range(1, 3):
-            if n[i] ^ 2 < minimum:
+            if np.abs(n[i]) < minimum:
                 index = i
-                minimum = n[i] ^ 2
+                minimum = np.abs(n[i])
 
-        m = n
         n[index] = 0
         n = n / np.linalg.norm(n)
-        print("Correction error is: ", np.linalg.norm(m - n))
+
+    one_zero = (n[0] == 0 and n[1] * n[2] != 0) or\
+               (n[1] == 0 and n[2] * n[0] != 0) or\
+               (n[2] == 0 and n[0] * n[1] != 0)
 
     # Correction for normal vector with exactly one zero component
-    if (n[0] == 0 and n[1] * n[2] != 0) or (n[1] == 0 and n[2] * n[0] != 0) or (n[2] == 0 and n[0] * n[1] != 0):
-        print("Best fitting plane non-physical, attempting to correct...")
+    if one_zero:
         minimum = 2
         index = 0
         for i in range(3):
-            if n[i] != 0 and n[i] ** 2 < minimum:
+            if n[i] != 0 and np.abs(n[i]) < minimum:
                 index = i
-                minimum = n[i] ** 2
+                minimum = np.abs(n[i])
 
-        m = n
         n[index] = 0
         n = n / np.linalg.norm(n)
-        print("Correction error is: ", np.linalg.norm(m - n))
 
+    print("Correction error is: ", np.linalg.norm(m - n))
     return n
 
 
@@ -171,7 +184,7 @@ def get_basis_from_normal(n):
     Parameters
     ----------
     n : ndarray
-        physical versor, shape (3,)
+        physical unit vector, shape (3,)
 
     Returns
     -------
@@ -193,7 +206,7 @@ def get_basis_from_normal(n):
         j = 0
         for i in range(3):
             if i != index:
-                y[j] = x[j]
+                y[j] = x[i]
                 j += 1
 
         return y
@@ -244,7 +257,7 @@ def orthonormal_rotation(v):
     u = u / np.linalg.norm(u)
     w = np.cross(v, u)
 
-    return np.array([v, u, w])
+    return np.transpose(np.array([v, u, w]))
 
 
 def find_vector(mat):

@@ -95,9 +95,108 @@ class TestSimpleFunctions(unittest.TestCase):
 
 
 class TestComplexFunctions(unittest.TestCase):
-    def test_if_unitest_module_sees_this_test(self):
-        """Good practice - always check if unittest module sees test in a new class/file"""
-        self.assertTrue(False)
+    def test_find_vals(self):
+        """Test if we find correct density coefficients from log basis matix and pixel vals"""
+
+        a = np.array([[1., 0.],
+                      [0., 2.],
+                      [0., 0.]])
+
+        for r in [[1., 2., 5.], [1., 2., -5.], [1., 2., 0.]]:
+            with self.subTest(mode="Simple projection", x=[a, r]):
+                self.assertListEqual(list(aux.find_vals(a, r)), [-1., -1.])
+
+        a = np.array([[1., 0.],
+                      [0., 0.],
+                      [0., 2.]])
+
+        for r in [[1., 2., -5.], [1., -1., -5.]]:
+            with self.subTest(mode="Simple projection", x=[a, r]):
+                self.assertListEqual(list(aux.find_vals(a, r)), [-1., 2.5])
+
+        a = np.array([[2., 0.],
+                      [2., 0.],
+                      [0., 1.]])
+
+        for r in [[2., 2., 2.], [4., 0., 2.]]:
+            with self.subTest(mode="Harder projection", x=[a, r]):
+                self.assertListEqual(list(aux.find_vals(a, r)), [-1., -2.])
+
+    def test_get_physical_normal(self):
+        vl = list(
+            map(lambda v: v/np.linalg.norm(v), np.random.randn(50, 3))
+        )
+
+        for v in vl:
+            with self.subTest(x=v):
+                n = aux.get_physical_normal(v)
+                self.assertAlmostEqual(
+                    np.linalg.norm(n), 1., 4
+                )
+                one_zero = (n[0] == 0 and n[1] * n[2] != 0) or\
+                           (n[1] == 0 and n[2] * n[0] != 0) or\
+                           (n[2] == 0 and n[0] * n[1] != 0)
+
+                self.assertFalse(aux.check_positivity(+n))
+                self.assertFalse(aux.check_positivity(-n))
+                self.assertFalse(one_zero)
+
+    def test_get_basis_from_normal(self):
+        vl = list(
+            map(lambda v: v/np.linalg.norm(v), np.random.randn(50, 3))
+        )
+
+        for v in vl:
+            n = aux.get_physical_normal(v)
+            with self.subTest(x=n):
+                x, y = aux.get_basis_from_normal(n)
+                self.assertAlmostEqual(np.dot(x, n), 0., 5)
+                self.assertAlmostEqual(np.dot(y, n), 0., 5)
+                self.assertTrue(np.alltrue(x > -np.full(3, aux._epsilon)))
+                self.assertTrue(np.alltrue(y > -np.full(3, aux._epsilon)))
+
+    def test_orthonormal_rotation(self):
+        vl = list(
+            map(lambda v: v/np.linalg.norm(v), np.random.randn(50, 3))
+        )
+
+        for v in vl:
+            a = aux.orthonormal_rotation(v)
+            k = np.array([1, 0, 0])
+            with self.subTest(x=v):
+                self.assertListEqual(list(np.matmul(a, k)), list(v))
+
+    def test_find_vector(self):
+        m = [[1., 0., 0.],
+             [0., 2., 0.],
+             [0., 0., 1.]]
+        m = np.array(m)
+
+        with self.subTest(x=m):
+            v = aux.find_vector(m)
+            self.assertListEqual(list(v), [0., 0., 1.])
+
+        m = [[1., 0., 0.],
+             [0., 1., 0.],
+             [0., 0., 2.]]
+        m = np.array(m)
+
+        with self.subTest(x=m):
+            v = aux.find_vector(m)
+            self.assertListEqual(list(v), [0., 1., 0.])
+
+        m = [[1., 0.,  0.],
+             [0., 2., -2.],
+             [0., 2., -2.]]
+        m = np.array(m)
+
+        with self.subTest(x=m):
+            v = aux.find_vector(m)
+            self.assertTrue(np.linalg.norm(v - np.real(v)) < 0.001)
+            v = np.real(v)
+            self.assertAlmostEqual(v[0], 0., 4)
+            self.assertAlmostEqual(v[1], np.sqrt(0.5), 4)
+            self.assertAlmostEqual(v[2], np.sqrt(0.5), 4)
 
 if __name__ == '__main__':
     unittest.main()
