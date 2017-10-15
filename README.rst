@@ -10,6 +10,10 @@ Testing
 #######
 Run the following command:
 ``make test``
+To check the code coverage use:
+``make coverage``
+or to check the results interactively (DE users only):
+``make html``
 
 Installation
 ############
