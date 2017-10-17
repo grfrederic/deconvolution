@@ -8,12 +8,14 @@ Special thanks to prof. Daniel Wójcik and dr Piotr Majka, the scientific superv
 
 Testing
 #######
-Run the following command:
-``make test``
-To check the code coverage use:
-``make coverage``
-or to check the results interactively (DE users only):
-``make html``
+1. Testing using Python 3:
+  ``make test``
+2. Testing using Python 2
+  ``make comp``
+3. Checking code coverage
+  ``make coverage``
+4. Check coverage interactively (DE users only):
+  ``make html``
 
 Installation
 ############

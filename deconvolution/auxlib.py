@@ -144,7 +144,7 @@ def get_physical_normal(n):
     if not check_positivity(n) and not check_positivity(-n) and not one_zero:
         return n
 
-    print("Best fitting plane non-physical, attempting to correct...")
+    # print("Best fitting plane non-physical, attempting to correct...")
     m = n
 
     if check_positivity(n) or check_positivity(-n):
@@ -174,7 +174,7 @@ def get_physical_normal(n):
         n[index] = 0
         n = n / np.linalg.norm(n)
 
-    print("Correction error is: ", np.linalg.norm(m - n))
+    # print("Correction error is: ", np.linalg.norm(m - n))
     return n
 
 
