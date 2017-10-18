@@ -26,6 +26,8 @@ def _proper_vector_check(vect):
     bool
         True if all components lie in the interval [0,1]. False otherwise
     """
+    if len(vect) == 0:
+        return True
     return not (np.amax(vect) > 1 or np.amin(vect) < 0)
 
 
@@ -47,6 +49,8 @@ def _array_to_colour_255(arr):
     _array_to_colour_1
 
     """
+    if len(arr) == 0:
+        return np.array([], dtype=np.uint8)
     return np.array(np.minimum(np.maximum(arr, 0), 255), dtype=np.uint8)
 
 
@@ -63,11 +67,13 @@ def _array_to_colour_1(arr):
     ndarray
         array entries converted to floats from [0,1]
     """
+    if len(arr) == 0:
+        return np.array([], dtype=np.float)
     return np.array(np.minimum(np.maximum(arr, 0), 1), dtype=float)
 
 
 def _array_positive(arr):
-    """Changes zeros to inf zeros
+    """Changes numbers smaller than arbitrary infinitesimal number to that number
 
     Parameters
     ----------
@@ -122,9 +128,8 @@ class PixelOperations:
             Erroneous basis
         """
 
-        if basis is None or len(basis) == 0:
-            self.__basis = []
-            self.__basis_dim = 0
+        if basis is None:
+            basis = []
 
         basis = np.array(basis, dtype=float)
 
