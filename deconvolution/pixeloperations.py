@@ -13,7 +13,7 @@ _white255 = np.array([255, 255, 255], dtype=float)
 _white1 = np.array([1, 1, 1], dtype=float)
 
 
-def _proper_vector_check(vect):
+def _entries_in_closed_interval(vect):
     """Checks if all list components are in [0,1]
 
     Parameters
@@ -28,7 +28,31 @@ def _proper_vector_check(vect):
     """
     if len(vect) == 0:
         return True
-    return not (np.amax(vect) > 1 or np.amin(vect) < 0)
+    try:
+        return not (np.amax(vect) > 1 or np.amin(vect) < 0)
+    except TypeError:
+        return False
+
+
+def _entries_in_half_closed_interval(vect):
+    """Checks if all list components are in (0,1]
+
+    Parameters
+    ----------
+    vect : array_like
+        Container with values to check
+
+    Returns
+    -------
+    bool
+        True if all components lie in the interval [0,1]. False otherwise
+    """
+    if len(vect) == 0:
+        return True
+    try:
+        return not (np.amax(vect) > 1 or np.amin(vect) <= 0)
+    except TypeError:
+        return False
 
 
 def _array_to_colour_255(arr):
@@ -136,7 +160,7 @@ class PixelOperations:
         if basis.shape not in [(0,), (1, 3), (2, 3), (3, 3)]:
             raise ex.BasisException("Basis has invalid dimensions, and was not set.")
 
-        elif not _proper_vector_check(basis):
+        elif not _entries_in_closed_interval(basis):
             raise ex.BasisException("Check components of the base vectors.")
 
         else:
@@ -169,10 +193,10 @@ class PixelOperations:
 
         background = np.array(background, dtype=float)
 
-        if background.shape is not (3,):
+        if background.shape != (3,):
             raise ValueError("Check background vector shape.")
 
-        if not _proper_vector_check(background):
+        if not _entries_in_half_closed_interval(background):
             raise ValueError("Check components of the background vector.")
 
         self.__background = _array_positive(_array_to_colour_1(background))

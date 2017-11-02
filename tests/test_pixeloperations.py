@@ -4,17 +4,35 @@ import deconvolution.pixeloperations as px
 
 
 class TestAuxiliaryFunctions(unittest.TestCase):
-    def test_proper_vector_check(self):
-        """All components in [0,1] iff True"""
-        self.assertTrue(px._proper_vector_check([]))
+    def test_entries_in_closed_interval(self):
+        """All components are numbers in [0,1] iff True"""
+        self.assertTrue(px._entries_in_closed_interval([]))
 
         for v in [[0, 1], [0.001, 0.1, 1], [0.1, 0.2, 0.3], [-0.], [0.55, 0.99]]:
-            self.assertTrue(px._proper_vector_check(v))
-            self.assertTrue(px._proper_vector_check(np.array(v)))
+            self.assertTrue(px._entries_in_closed_interval(v))
+            self.assertTrue(px._entries_in_closed_interval(np.array(v)))
 
-        for v in [[0, 1.001], [0.00, 0., -0.0001], [-0.1, 0, 0.3], [1e9], [0.55, 0.99, 10001, -1]]:
-            self.assertFalse(px._proper_vector_check(v))
-            self.assertFalse(px._proper_vector_check(np.array(v)))
+        for v in [
+            [0, 1.001], [0.00, 0., -0.0001], [-0.1, 0, 0.3],
+            [1e9], [0.55, 0.99, 10001, -1], ["a", 1], ["a", "b"]
+        ]:
+            self.assertFalse(px._entries_in_closed_interval(v))
+            self.assertFalse(px._entries_in_closed_interval(np.array(v)))
+
+    def test_entries_in_half_closed_interval(self):
+        """All components are numbers in (0,1] iff True"""
+        self.assertTrue(px._entries_in_half_closed_interval([]))
+
+        for v in [[0.001, 1], [0.001, 0.1, 1], [0.1, 0.2, 0.3], [0.55, 0.99]]:
+            self.assertTrue(px._entries_in_half_closed_interval(v))
+            self.assertTrue(px._entries_in_half_closed_interval(np.array(v)))
+
+        for v in [
+            [0, 1.001], [0.00, 0., 0.0001], [-0.1, 0, 0.3], [0., 0.1],
+            [1e9], [0.55, 0.99, 10001, -1], ["a", 1], ["a", "b"]
+        ]:
+            self.assertFalse(px._entries_in_half_closed_interval(v))
+            self.assertFalse(px._entries_in_half_closed_interval(np.array(v)))
 
     def test_array_to_colour_255(self):
         input_cases = []
@@ -130,6 +148,40 @@ class TestPixelOperations(unittest.TestCase):
         """Check if background vector is white for empty init"""
         pix_ops = px.PixelOperations()
         self.assertTrue(np.allclose(pix_ops.get_background(), px._white1, rtol=1e-05, atol=1e-08))
+
+    def test_set_background_wrong_shape(self):
+        """Check if errors are raised when background has wrong shape"""
+        for vec in [
+            [0.1, 0.2, 0.3, 0.4], [0.1, 0.2], [],
+            [[0.1, 0.2, 0.3], [0.1, 0.2]], [[0.1, 0.2, 0.3], [0.1, 0.2, 0.3]]
+        ]:
+            with self.assertRaises(ValueError):
+                pix_ops = px.PixelOperations()
+                pix_ops.set_background(vec)
+
+    def test_set_background_wrong_entries(self):
+        """Check if errors are raised when background has correct shape but wrong entries"""
+        for vec in [
+            [0.1, 0.2, 0.0], [0.1, 0.2, -0.1], [0.1, 0.2, 1.01],
+            [1.0, 0.2, -0.3], [1.0001, -0.0001, -0.3],
+            ["a", "b", 1]
+        ]:
+            with self.subTest(vec=vec):
+                with self.assertRaises(ValueError):
+                    pix_ops = px.PixelOperations()
+                    pix_ops.set_background(vec)
+
+    def test_set_background_correct_entries(self):
+        """List of correct background vectors"""
+
+        for vec in [[0.1, 0.02, 0.9], [0.11, 0.01, 0.99], [0.001, 0.12, 0.999], [0.1, 1, 0.1]]:
+            pix_ops = px.PixelOperations()
+            pix_ops.set_background(vec)
+            self.assertTrue(np.allclose(pix_ops.get_background(), vec, rtol=1e-05, atol=1e-08))
+
+            pix_ops1 = px.PixelOperations()
+            pix_ops1.set_background(np.array(vec))
+            self.assertTrue(np.allclose(pix_ops.get_background(), np.array(vec), rtol=1e-05, atol=1e-08))
 
 
 if __name__ == '__main__':
