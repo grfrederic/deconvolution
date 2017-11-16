@@ -160,13 +160,11 @@ class PixelOperations:
         if basis.shape not in [(0,), (1, 3), (2, 3), (3, 3)]:
             raise ex.BasisException("Basis has invalid dimensions, and was not set.")
 
-        elif not _entries_in_closed_interval(basis):
+        if not _entries_in_closed_interval(basis):
             raise ex.BasisException("Check components of the base vectors.")
 
-        else:
-            self.__basis_dim = len(basis)
-
         self.__basis = _array_positive(basis)
+        self.__basis_dim = len(basis)
 
         if self.check_basis():
             self.__basis_log_matrix = np.transpose(-np.log(self.__basis))
@@ -374,13 +372,17 @@ class PixelOperations:
             raise ex.BasisException("No proper basis set.")
 
     def __get_coef2(self, pixel):
+        """Finds exponentials in which stains are present. Returns non-negative values"""
         r = np.array(pixel, dtype=float)
         r = _array_positive(_array_to_colour_1(r/255.))
         r = r/self.__background
 
-        return aux.find_vals(self.__basis_log_matrix, np.log(r))
+        sol = aux.find_vals(self.__basis_log_matrix, np.log(r))
+        sol = np.maximum(0, sol)
+        return sol
 
     def __get_coef3(self, pixel):
+        """Finds exponentials in which stains are present. Returns non-negative values"""
         r = np.array(pixel, dtype=float)
         r = _array_positive(_array_to_colour_1(r/255.))
         r /= self.__background

@@ -1,6 +1,7 @@
 import unittest
 import numpy as np
 import deconvolution.pixeloperations as px
+import deconvolution.exceptions as ex
 
 
 class TestAuxiliaryFunctions(unittest.TestCase):
@@ -173,7 +174,6 @@ class TestPixelOperations(unittest.TestCase):
 
     def test_set_background_correct_entries(self):
         """List of correct background vectors"""
-
         for vec in [[0.1, 0.02, 0.9], [0.11, 0.01, 0.99], [0.001, 0.12, 0.999], [0.1, 1, 0.1]]:
             pix_ops = px.PixelOperations()
             pix_ops.set_background(vec)
@@ -183,6 +183,163 @@ class TestPixelOperations(unittest.TestCase):
             pix_ops1.set_background(np.array(vec))
             self.assertTrue(np.allclose(pix_ops.get_background(), np.array(vec), rtol=1e-05, atol=1e-08))
 
+    def test_set_basis_wrong_shape(self):
+        """Shape (3, 2)"""
+        pix_ops = px.PixelOperations()
+        with self.assertRaises(ex.BasisException):
+            pix_ops.set_basis([[0.4, 0.5], [1, 0.8], [0.9, 0.12]])
+
+    def test_set_basis_wrong_shape_2(self):
+        """Shape (3, 4)"""
+        pix_ops = px.PixelOperations()
+        with self.assertRaises(ex.BasisException):
+            pix_ops.set_basis([[0.1, 0.3, 0.5, 0.7], [0.1, 0.20, 0.2, 0.3], [0.33, 0.45, 0.1, 0.2]])
+
+    def test_basis_wrong_entries(self):
+        """Negative entries"""
+        pix_ops = px.PixelOperations()
+        with self.assertRaises(ex.BasisException):
+            pix_ops.set_basis([[0.1, -0.1, 0.0], [0.01, -0.1, 0.1]])
+
+    def test_basis_wrong_entries_2(self):
+        """Entries greater than 1"""
+        pix_ops = px.PixelOperations()
+        with self.assertRaises(ex.BasisException):
+            pix_ops.set_basis([[0.1, 1.01, 0.0], [0.01, 0.4, 0.1]])
+
+    def test_basis_dimension_0(self):
+        """Empty list of basis vectors"""
+        pix_ops = px.PixelOperations()
+        pix_ops.set_basis([])
+        self.assertEqual(pix_ops.get_basis().size, 0)
+
+    def test_basis_dimension_1(self):
+        """One vector in basis"""
+        basis = [[1, 0.1, 0]]
+        pix_ops = px.PixelOperations()
+        pix_ops.set_basis(basis)
+
+        self.assertTrue(np.allclose(pix_ops.get_basis(), np.array(basis), rtol=1e-05, atol=1e-05))
+        self.assertGreater(pix_ops.get_basis().max(), 0)
+        self.assertEqual(pix_ops.get_basis_dim(), 1)
+
+    def test_basis_dimension_2(self):
+        """Two vectors in basis"""
+        basis = [[1, 0.1, 0], [0.3, 0.2, 0.1]]
+        pix_ops = px.PixelOperations()
+        pix_ops.set_basis(basis)
+
+        self.assertTrue(np.allclose(pix_ops.get_basis(), np.array(basis), rtol=1e-05, atol=1e-05))
+        self.assertGreater(pix_ops.get_basis().max(), 0)
+        self.assertEqual(pix_ops.get_basis_dim(), 2)
+
+    def test_basis_dimension_3(self):
+        """Three vectors in basis"""
+        basis = [[1, 0.1, 0], [0.2, 0.2, 0.2], [0.1, 0.5, 1]]
+        pix_ops = px.PixelOperations()
+        pix_ops.set_basis(basis)
+
+        self.assertTrue(np.allclose(pix_ops.get_basis(), np.array(basis), rtol=1e-05, atol=1e-05))
+        self.assertGreater(pix_ops.get_basis().max(), 0)
+        self.assertEqual(pix_ops.get_basis_dim(), 3)
+
+    def test_basis_pseudodependent_1(self):
+        """Two vectors that are (pseudo)linearly dependent"""
+        basis = [[0.1, 0.2, 0.3], [0.01, 0.04, 0.09]]
+        pix_ops = px.PixelOperations()
+
+        with self.assertRaises(ex.BasisException):
+            pix_ops.set_basis(basis)
+
+    def test_basis_pseudodependent_2(self):
+        """Three vectors that are (pseudo)linearly dependent"""
+        basis = [[0.1, 0.2, 0.3], [0.01, 0.04, 0.09], [0.5, 0.1, 0.3]]
+        pix_ops = px.PixelOperations()
+
+        with self.assertRaises(ex.BasisException):
+            pix_ops.set_basis(basis)
+
+    def test_get_coef2(self):
+        """Some trivial combinations of two vectors. In some cases with noise"""
+        basis = [[0.1, 0.2, 0.3], [0.7, 0.5, 0.1]]
+        pix_ops = px.PixelOperations(basis=basis)
+
+        image_1dim = [
+                [0.1*0.7, 0.2*0.5, 0.3*0.1],
+                [0.1**2, 0.2**2, 0.3**2],
+                [0.01+0.001, 0.04-0.001, 0.09+0.001],
+                [0.1*0.7**2+0.000001, 0.2*0.5**2-0.00001, 0.3*0.1**2+0.00001]
+            ]
+        image = 255. * np.array([image_1dim])
+        coef = pix_ops.get_coef(image)
+        coef_np = np.array(coef)
+
+        desi = [
+            [[1, 2, 2, 1]],
+            [[1, 0, 0, 2]]
+        ]
+        desi_np = np.array(desi)
+
+        # Uncomment to see numerical values
+        # print("\ntest_get_coef2:\n", desi_np, "\n\n\n", coef_np)
+
+        self.assertEqual(coef_np.shape, desi_np.shape)
+        self.assertTrue(np.allclose(coef_np, desi_np, rtol=4e-02, atol=0.02))
+
+    def test_get_coef3(self):
+        """Some trivial combinations of three vectors. In some cases with noise"""
+        basis = [[0.1, 0.2, 0.3], [0.7, 0.5, 0.1], [1, 0.9, 0.2]]
+        pix_ops = px.PixelOperations(basis=basis)
+
+        image_1dim = [
+            [0.1*0.7*1, 0.2*0.5*0.9, 0.3*0.1*0.2],
+            [0.1**2, 0.2**2, 0.3**2],
+            [0.01+0.0001, 0.04-0.0001, 0.09+0.00001],
+            [0.1*0.7**2*1+0.000001, 0.2*0.5**2*0.9-0.000001, 0.3*0.1**2*0.2+0.000001]
+        ]
+        image = 255. * np.array([image_1dim])
+        coef = pix_ops.get_coef(image)
+        coef_np = np.array(coef)
+
+        desi = [
+            [[1, 2, 2, 1]],
+            [[1, 0, 0, 2]],
+            [[1, 0, 0, 1]]
+        ]
+        desi_np = np.array(desi)
+
+        # Uncomment to see numerical values
+        # print("\ntest_get_coef3:\n", desi_np, "\n\n\n", coef_np)
+
+        self.assertEqual(coef_np.shape, desi_np.shape)
+        self.assertTrue(np.allclose(coef_np, desi_np, rtol=5e-02, atol=0.03))
+
+    def test_get_coef_four_channels(self):
+        """Four channels, an exception should be raised"""
+        basis = [[0.1, 0.2, 0.3], [0.7, 0.5, 0.1], [1, 0.9, 0.2]]
+        pix_ops = px.PixelOperations(basis=basis)
+
+        image_1dim = [
+            [0.5, 0.1, 0.5, 0.7],
+            [0.1, 0.2, 0.6, 0.12]
+        ]
+        image = 255. * np.array([image_1dim])
+
+        with self.assertRaises(ValueError):
+            pix_ops.get_coef(image)
+
+    def test_get_coef_no_basis(self):
+        """Basis had not been set before get_coef was invoked"""
+        pix_ops = px.PixelOperations()
+
+        image_1dim = [
+            [0.5, 0.1, 0.5],
+            [0.1, 0.2, 0.6]
+        ]
+        image = 255. * np.array([image_1dim])
+
+        with self.assertRaises(ex.BasisException):
+            pix_ops.get_coef(image)
 
 if __name__ == '__main__':
     unittest.main()
