@@ -473,10 +473,10 @@ class TestTransformImageThreeDim(unittest.TestCase):
         r2 = self.white_matrix(50, 50) * self.v**0.3
         r3 = self.white_matrix(50, 50) * self.t**0.4
 
-        self.assertTrue(np.allclose(r[0], a, rtol=5e-03, atol=1))
-        self.assertTrue(np.allclose(r[1], r1, rtol=5e-03, atol=1))
-        self.assertTrue(np.allclose(r[2], r2, rtol=5e-03, atol=1))
-        self.assertTrue(np.allclose(r[3], r3, rtol=5e-03, atol=1))
+        self.assertTrue(np.allclose(r[0], a, rtol=5e-03, atol=2))
+        self.assertTrue(np.allclose(r[1], r1, rtol=5e-03, atol=2))
+        self.assertTrue(np.allclose(r[2], r2, rtol=5e-03, atol=2))
+        self.assertTrue(np.allclose(r[3], r3, rtol=5e-03, atol=2))
 
     def test_transform_image__2(self):
         """Test for a uniformly colored image, 100x50"""
@@ -494,10 +494,10 @@ class TestTransformImageThreeDim(unittest.TestCase):
         r2 = self.white_matrix(100, 50) * self.v**0.3
         r3 = self.white_matrix(100, 50) * self.t**0.4
 
-        self.assertTrue(np.allclose(r[0], a, rtol=5e-03, atol=1))
-        self.assertTrue(np.allclose(r[1], r1, rtol=5e-03, atol=1))
-        self.assertTrue(np.allclose(r[2], r2, rtol=5e-03, atol=1))
-        self.assertTrue(np.allclose(r[3], r3, rtol=5e-03, atol=1))
+        self.assertTrue(np.allclose(r[0], a, rtol=5e-03, atol=2))
+        self.assertTrue(np.allclose(r[1], r1, rtol=5e-03, atol=2))
+        self.assertTrue(np.allclose(r[2], r2, rtol=5e-03, atol=2))
+        self.assertTrue(np.allclose(r[3], r3, rtol=5e-03, atol=2))
 
     def test_transform_image__3(self):
         """Test for a non-uniformly colored image"""
@@ -508,7 +508,7 @@ class TestTransformImageThreeDim(unittest.TestCase):
         b = np.array(a, dtype=np.uint8)
 
         pix_ops = px.PixelOperations(basis=self.basis)
-        r = pix_ops.transform_image(b, mode=[0, 1, 2, -1])
+        r = pix_ops.transform_image(b, mode=[0, 1, 2, 3, -1])
 
         for ri in r:
             self.assertEqual(ri.dtype, np.uint8)
@@ -526,10 +526,10 @@ class TestTransformImageThreeDim(unittest.TestCase):
         r3_2 = self.white_matrix(50, 50) * self.t**0.6
         r3 = np.concatenate((r3_1, r3_2))
 
-        self.assertTrue(np.allclose(r[0], a, rtol=5e-03, atol=1))
-        self.assertTrue(np.allclose(r[1], r1, rtol=5e-03, atol=1))
-        self.assertTrue(np.allclose(r[2], r2, rtol=5e-03, atol=1))
-        self.assertTrue(np.allclose(r[3], r3, rtol=5e-03, atol=1))
+        self.assertTrue(np.allclose(r[0], a, rtol=5e-03, atol=2))
+        self.assertTrue(np.allclose(r[1], r1, rtol=5e-03, atol=2))
+        self.assertTrue(np.allclose(r[2], r2, rtol=5e-03, atol=2))
+        self.assertTrue(np.allclose(r[3], r3, rtol=5e-03, atol=2))
 
     def test_bad_image(self):
         """Test for an image of shape (X,Y,4)"""
@@ -554,8 +554,48 @@ class TestTransformImageThreeDim(unittest.TestCase):
         r1 = np.array(255 * np.ones(shape=(50, 50, 3)) * self.u**0.2, dtype=np.uint8)
         r2 = 255 * np.ones(shape=(50, 50, 3)) * self.v**0.3
 
-        self.assertTrue(np.allclose(r[0], a, rtol=0, atol=2))
-        self.assertTrue(np.allclose(r[1], r1, rtol=0, atol=2))
-        self.assertTrue(np.allclose(r[2], r2, rtol=0, atol=2))
+        self.assertTrue(np.allclose(r[0], a, rtol=0, atol=2.5))
+        self.assertTrue(np.allclose(r[1], r1, rtol=0, atol=2.5))
+        self.assertTrue(np.allclose(r[2], r2, rtol=0, atol=2.5))
+
+    def test_stain_removing(self):
+        """Remove all the stains, leave some noise"""
+        a = 255 * np.ones(shape=(50, 50, 3))
+        a *= (self.u**0.2) * (self.v**0.3)
+
+        a += np.random.rand(50, 50, 3)
+
+        b = np.array(a, dtype=np.uint8)
+
+        pix_ops = px.PixelOperations(basis=self.basis)
+        r, = pix_ops.transform_image(b, mode=[-1])
+        self.assertTrue(np.allclose(r, 255, rtol=0, atol=2.5))
+
+
+class TestTransformImageZeroOneDim(unittest.TestCase):
+    u = np.array([0.1, 0.2, 0.3])
+
+    @staticmethod
+    def white_matrix(x, y):
+        return 255 * np.ones(shape=(x, y, 3))
+
+    def test_basis_one_dim(self):
+        """Only one base vector"""
+        a = self.white_matrix(50, 50) * self.u**0.2
+        b = np.array(a, dtype=np.uint8)
+
+        pix_ops = px.PixelOperations(basis=[self.u])
+        with self.assertRaises(ex.BasisException):
+            pix_ops.transform_image(b, mode=[0])
+
+    def test_basis_empty(self):
+        """There is no base vector"""
+        a = self.white_matrix(50, 50) * self.u**0.2
+        b = np.array(a, dtype=np.uint8)
+
+        pix_ops = px.PixelOperations(basis=[])
+        with self.assertRaises(ex.BasisException):
+            pix_ops.transform_image(b, mode=[0])
+
 if __name__ == '__main__':
     unittest.main()
