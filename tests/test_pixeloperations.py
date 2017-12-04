@@ -4,6 +4,9 @@ import deconvolution.pixeloperations as px
 import deconvolution.exceptions as ex
 
 
+np.random.seed(10*8*2*3*9)
+
+
 class TestAuxiliaryFunctions(unittest.TestCase):
     def test_entries_in_closed_interval(self):
         """All components are numbers in [0,1] iff True"""
@@ -341,5 +344,218 @@ class TestPixelOperations(unittest.TestCase):
         with self.assertRaises(ex.BasisException):
             pix_ops.get_coef(image)
 
+
+class TestTransformImageTwoDim(unittest.TestCase):
+    u = np.array([0.1, 0.2, 0.3])
+    v = np.array([1, 0.3, 0.8])
+    basis = [u, v]
+
+    @staticmethod
+    def white_matrix(x, y):
+        return 255 * np.ones(shape=(x, y, 3))
+
+    def test_transform_image__1(self):
+        """Test for a uniformly colored image, 50x50"""
+        a = self.white_matrix(50, 50) * self.u**0.2 * self.v**0.3
+        b = np.array(a, dtype=np.uint8)
+
+        pix_ops = px.PixelOperations(basis=self.basis)
+        r = pix_ops.transform_image(b, mode=[0, 1, 2, -1])
+
+        for ri in r:
+            self.assertEqual(ri.dtype, np.uint8)
+            self.assertEqual(ri.shape, a.shape)
+
+        r1 = self.white_matrix(50, 50) * self.u**0.2
+        r2 = self.white_matrix(50, 50) * self.v**0.3
+
+        self.assertTrue(np.allclose(r[0], a, rtol=5e-03, atol=1))
+        self.assertTrue(np.allclose(r[1], r1, rtol=5e-03, atol=1))
+        self.assertTrue(np.allclose(r[2], r2, rtol=5e-03, atol=1))
+
+    def test_transform_image__2(self):
+        """Test for a uniformly colored image, 100x50"""
+        a = self.white_matrix(100, 50) * self.u**0.2 * self.v**0.3
+        b = np.array(a, dtype=np.uint8)
+
+        pix_ops = px.PixelOperations(basis=self.basis)
+        r = pix_ops.transform_image(b, mode=[0, 1, 2, -1])
+
+        for ri in r:
+            self.assertEqual(ri.dtype, np.uint8)
+            self.assertEqual(ri.shape, a.shape)
+
+        r1 = self.white_matrix(100, 50) * self.u**0.2
+        r2 = self.white_matrix(100, 50) * self.v**0.3
+
+        self.assertTrue(np.allclose(r[0], a, rtol=5e-03, atol=1))
+        self.assertTrue(np.allclose(r[1], r1, rtol=5e-03, atol=1))
+        self.assertTrue(np.allclose(r[2], r2, rtol=5e-03, atol=1))
+
+    def test_transform_image__3(self):
+        """Test for a non-uniformly colored image"""
+        a_1 = self.white_matrix(50, 50) * self.u**0.2 * self.v**0.3
+        a_2 = self.white_matrix(50, 50) * self.u**0.1 * self.v**0.5
+        a = np.concatenate((a_1, a_2))
+
+        b = np.array(a, dtype=np.uint8)
+
+        pix_ops = px.PixelOperations(basis=self.basis)
+        r = pix_ops.transform_image(b, mode=[0, 1, 2, -1])
+
+        for ri in r:
+            self.assertEqual(ri.dtype, np.uint8)
+            self.assertEqual(ri.shape, a.shape)
+
+        r1_1 = self.white_matrix(50, 50) * self.u**0.2
+        r1_2 = self.white_matrix(50, 50) * self.u**0.1
+        r1 = np.concatenate((r1_1, r1_2))
+
+        r2_1 = self.white_matrix(50, 50) * self.v**0.3
+        r2_2 = self.white_matrix(50, 50) * self.v**0.5
+        r2 = np.concatenate((r2_1, r2_2))
+
+        self.assertTrue(np.allclose(r[0], a, rtol=5e-03, atol=1))
+        self.assertTrue(np.allclose(r[1], r1, rtol=5e-03, atol=1))
+        self.assertTrue(np.allclose(r[2], r2, rtol=5e-03, atol=1))
+
+    def test_bad_image(self):
+        """Test for an image of shape (X,Y,4)"""
+
+        a = 255 * np.ones(shape=(50, 50, 4))
+        pix_ops = px.PixelOperations(basis=self.basis)
+        with self.assertRaises(ValueError):
+            pix_ops.transform_image(a)
+
+    def test_noisy_image(self):
+        """Test for an image with noise added"""
+        a = 255 * np.ones(shape=(50, 50, 3))
+        a *= (self.u**0.2) * (self.v**0.3)
+
+        a += np.random.rand(50, 50, 3)
+
+        b = np.array(a, dtype=np.uint8)
+
+        pix_ops = px.PixelOperations(basis=self.basis)
+        r = pix_ops.transform_image(b, mode=[0, 1, 2, -1])
+
+        r1 = np.array(255 * np.ones(shape=(50, 50, 3)) * self.u**0.2, dtype=np.uint8)
+        r2 = 255 * np.ones(shape=(50, 50, 3)) * self.v**0.3
+
+        self.assertTrue(np.allclose(r[0], a, rtol=0, atol=2))
+        self.assertTrue(np.allclose(r[1], r1, rtol=0, atol=2))
+        self.assertTrue(np.allclose(r[2], r2, rtol=0, atol=2))
+
+
+class TestTransformImageThreeDim(unittest.TestCase):
+    u = np.array([0.1, 0.2, 0.3])
+    v = np.array([1, 0.3, 0.8])
+    t = np.array([0.7, 0.8, 0.1])
+    basis = [u, v, t]
+
+    @staticmethod
+    def white_matrix(x, y):
+        return 255 * np.ones(shape=(x, y, 3))
+
+    def test_transform_image__1(self):
+        """Test for a uniformly colored image, 50x50"""
+        a = self.white_matrix(50, 50) * self.u**0.2 * self.v**0.3 * self.t**0.4
+        b = np.array(a, dtype=np.uint8)
+
+        pix_ops = px.PixelOperations(basis=self.basis)
+        r = pix_ops.transform_image(b, mode=[0, 1, 2, 3, -1])
+
+        for ri in r:
+            self.assertEqual(ri.dtype, np.uint8)
+            self.assertEqual(ri.shape, a.shape)
+
+        r1 = self.white_matrix(50, 50) * self.u**0.2
+        r2 = self.white_matrix(50, 50) * self.v**0.3
+        r3 = self.white_matrix(50, 50) * self.t**0.4
+
+        self.assertTrue(np.allclose(r[0], a, rtol=5e-03, atol=1))
+        self.assertTrue(np.allclose(r[1], r1, rtol=5e-03, atol=1))
+        self.assertTrue(np.allclose(r[2], r2, rtol=5e-03, atol=1))
+        self.assertTrue(np.allclose(r[3], r3, rtol=5e-03, atol=1))
+
+    def test_transform_image__2(self):
+        """Test for a uniformly colored image, 100x50"""
+        a = self.white_matrix(100, 50) * self.u**0.2 * self.v**0.3 * self.t**0.4
+        b = np.array(a, dtype=np.uint8)
+
+        pix_ops = px.PixelOperations(basis=self.basis)
+        r = pix_ops.transform_image(b, mode=[0, 1, 2, 3, -1])
+
+        for ri in r:
+            self.assertEqual(ri.dtype, np.uint8)
+            self.assertEqual(ri.shape, a.shape)
+
+        r1 = self.white_matrix(100, 50) * self.u**0.2
+        r2 = self.white_matrix(100, 50) * self.v**0.3
+        r3 = self.white_matrix(100, 50) * self.t**0.4
+
+        self.assertTrue(np.allclose(r[0], a, rtol=5e-03, atol=1))
+        self.assertTrue(np.allclose(r[1], r1, rtol=5e-03, atol=1))
+        self.assertTrue(np.allclose(r[2], r2, rtol=5e-03, atol=1))
+        self.assertTrue(np.allclose(r[3], r3, rtol=5e-03, atol=1))
+
+    def test_transform_image__3(self):
+        """Test for a non-uniformly colored image"""
+        a_1 = self.white_matrix(50, 50) * self.u**0.2 * self.v**0.3 * self.t**0.4
+        a_2 = self.white_matrix(50, 50) * self.u**0.1 * self.v**0.5 * self.t**0.6
+        a = np.concatenate((a_1, a_2))
+
+        b = np.array(a, dtype=np.uint8)
+
+        pix_ops = px.PixelOperations(basis=self.basis)
+        r = pix_ops.transform_image(b, mode=[0, 1, 2, -1])
+
+        for ri in r:
+            self.assertEqual(ri.dtype, np.uint8)
+            self.assertEqual(ri.shape, a.shape)
+
+        r1_1 = self.white_matrix(50, 50) * self.u**0.2
+        r1_2 = self.white_matrix(50, 50) * self.u**0.1
+        r1 = np.concatenate((r1_1, r1_2))
+
+        r2_1 = self.white_matrix(50, 50) * self.v**0.3
+        r2_2 = self.white_matrix(50, 50) * self.v**0.5
+        r2 = np.concatenate((r2_1, r2_2))
+
+        r3_1 = self.white_matrix(50, 50) * self.t**0.4
+        r3_2 = self.white_matrix(50, 50) * self.t**0.6
+        r3 = np.concatenate((r3_1, r3_2))
+
+        self.assertTrue(np.allclose(r[0], a, rtol=5e-03, atol=1))
+        self.assertTrue(np.allclose(r[1], r1, rtol=5e-03, atol=1))
+        self.assertTrue(np.allclose(r[2], r2, rtol=5e-03, atol=1))
+        self.assertTrue(np.allclose(r[3], r3, rtol=5e-03, atol=1))
+
+    def test_bad_image(self):
+        """Test for an image of shape (X,Y,4)"""
+
+        a = 255 * np.ones(shape=(50, 50, 4))
+        pix_ops = px.PixelOperations(basis=self.basis)
+        with self.assertRaises(ValueError):
+            pix_ops.transform_image(a)
+
+    def test_noisy_image(self):
+        """Test for an image with noise added"""
+        a = 255 * np.ones(shape=(50, 50, 3))
+        a *= (self.u**0.2) * (self.v**0.3)
+
+        a += np.random.rand(50, 50, 3)
+
+        b = np.array(a, dtype=np.uint8)
+
+        pix_ops = px.PixelOperations(basis=self.basis)
+        r = pix_ops.transform_image(b, mode=[0, 1, 2, -1])
+
+        r1 = np.array(255 * np.ones(shape=(50, 50, 3)) * self.u**0.2, dtype=np.uint8)
+        r2 = 255 * np.ones(shape=(50, 50, 3)) * self.v**0.3
+
+        self.assertTrue(np.allclose(r[0], a, rtol=0, atol=2))
+        self.assertTrue(np.allclose(r[1], r1, rtol=0, atol=2))
+        self.assertTrue(np.allclose(r[2], r2, rtol=0, atol=2))
 if __name__ == '__main__':
     unittest.main()

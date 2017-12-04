@@ -258,8 +258,17 @@ class PixelOperations:
         -------
         list
             list of ndarrays with shape same as image according to mode
+
+        Raises
+        ------
+        ValueError
+            if image has wrong shape
         """
         r = np.array(image, dtype=float)
+
+        dim1, dim2, dim3 = r.shape
+        if dim3 != 3:
+            raise ValueError("Basis has wrong shape.")
 
         v, u = self.__basis
         vf, uf = np.zeros_like(r), np.zeros_like(r)
@@ -352,7 +361,7 @@ class PixelOperations:
         Returns
         -------
         list
-            list of ndarrays with shape same as image according to mode
+            list of ndarrays with shape same as image according to mode. Type is np.uint8.
 
         Raises
         ------
