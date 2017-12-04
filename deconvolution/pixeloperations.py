@@ -247,12 +247,8 @@ class PixelOperations:
         image : ndarray
             shape (x,y,3)
         mode : array_like
-            if list contains:
-                0 - image generated from white light and two stains
-                1 - white light and first stain
-                2 - white light and second stain
-
-                -1 - use image and remove both stains to obtain the rest
+            elements can be 0 (image generated from white light and two stains), 1 (white light and first stain),
+            2 (white light and second stain) or -1 (remove both stains to obtain the rest)
 
         Returns
         -------
@@ -299,13 +295,9 @@ class PixelOperations:
         image : ndarray
             shape (x,y,3)
         mode : array_like
-            if list contains:
-                0 - image generated from white light and three stains
-                1 - white light and first stain
-                2 - white light and second stain
-                3 - white light and third stain
-
-                -1 - use image and remove all the stains to obtain the rest
+            elements can be 0 (image generated from white light and two stains), 1 (white light and first stain),
+            2 (white light and second stain), 3 (white light and third stain)
+            or -1 (remove all stains to obtain the rest)
 
         Returns
         -------
@@ -350,13 +342,9 @@ class PixelOperations:
         image : ndarray
             shape (x,y,3)
         mode : array_like
-            if list contains:
-                0 - image generated from white light and all stains
-                1 - white light and first stain
-                2 - white light and second stain
-                3 - white light and third stain (only if basis with three vectors has been set)
-
-                -1 - use image and remove all the stains to obtain the rest
+            elements can be 0 (image generated from white light and two stains), 1 (white light and first stain),
+            2 (white light and second stain), 3 (white light and third stain. Note that this works only if a basis
+            with three vectors is used) or -1 (remove all stains to obtain the rest)
 
         Returns
         -------
