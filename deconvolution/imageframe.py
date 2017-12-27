@@ -46,6 +46,26 @@ class ImageFrame:
         else:
             raise ValueError("Variable verbose has to be bool.")
 
+    def get_verbose(self):
+        """Returns verbosity.
+
+        Returns
+        -------
+        bool
+            True if verbosity is turned on, False otherwise
+        """
+        return self.__verbose
+
+    def get_threads(self):
+        """Returns number of threads to be used.
+
+        Returns
+        -------
+        int
+            number of threads used in deconvolution
+        """
+        return self.__threads
+
     def set_image(self, image):
         """Sets new image to deconvolve.
         Parameters
@@ -62,6 +82,26 @@ class ImageFrame:
             self.__image = np.asarray(image).copy()
         else:
             raise ValueError("image has to be a PIL Image.")
+
+    def get_image(self):
+        """Returns copy of the stored image.
+
+        Returns
+        -------
+        ndarray
+            copy of the array representing image
+        """
+        return np.copy(self.__image)
+
+    def get_inertia_matrix(self):
+        """Returns copy of the calculated inertia matrix.
+
+        Returns
+        -------
+        ndarray
+            copy of the array representing the inertia matrix.
+        """
+        return np.copy(self.__inertia_matrix)
 
     def __source_set(self):
         """Check whether an image has been set
