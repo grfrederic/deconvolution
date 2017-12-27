@@ -170,10 +170,9 @@ class TestPixelOperations(unittest.TestCase):
             [1.0, 0.2, -0.3], [1.0001, -0.0001, -0.3],
             ["a", "b", 1]
         ]:
-            with self.subTest(vec=vec):
-                with self.assertRaises(ValueError):
-                    pix_ops = px.PixelOperations()
-                    pix_ops.set_background(vec)
+            with self.assertRaises(ValueError):
+                pix_ops = px.PixelOperations()
+                pix_ops.set_background(vec)
 
     def test_set_background_correct_entries(self):
         """List of correct background vectors"""
