@@ -101,6 +101,9 @@ class ImageFrame:
         ndarray
             copy of the array representing the inertia matrix.
         """
+        if not self.__source_sampled():
+            raise ex.ImageException("Source not sampled")
+
         return np.copy(self.__inertia_matrix)
 
     def __source_set(self):
@@ -141,7 +144,7 @@ class ImageFrame:
         --------
         PixelOperations
         """
-        if not self.__source_set:
+        if not self.__source_set():
             raise ex.ImageException("No source set")
 
         if self.__verbose:
@@ -152,18 +155,18 @@ class ImageFrame:
 
         def sample_pixel(pix):
             rgb = np.array(pix, dtype=float) / pixel_operations.get_background()
-            rgb = np.array(map(aux.to_colour_255, rgb))
+            rgb = np.array([aux.to_colour_255(c) for c in rgb])
             rgb = 1. * rgb / step
             rgb_sample[tuple(map(int, rgb.tolist()))] += 1
 
         def sample_row(row):
-            map(sample_pixel, row)
+            [sample_pixel(px) for px in row]
 
-        # bad code
-        map(sample_row, self.__image)
+        [sample_row(row) for row in self.__image]
 
         w0 = np.ones(2 ** sample_density)
-        w1 = np.log(2) * sample_density - np.log(np.arange(2 ** sample_density) + 0.5)
+        w1 = np.log( (0.1 + np.arange(2 ** sample_density)) /
+                     (0.1 + 2 ** sample_density) )
         w2 = w1 * w1
 
         def w_vec(i):
@@ -294,6 +297,7 @@ class ImageFrame:
         ImageException
             image has not been set yet
         """
+
         if not self.__source_set():
             raise ex.ImageException("Set source first")
 
@@ -357,7 +361,9 @@ class ImageFrame:
         min_y = belligerency * b_mean
 
         if min_y <= 0:
-            raise Exception("Something went horribly wrong. Feel free to bash developers")
+            if self.__verbose:
+                print("Unable to resolve.")
+            return
 
         def safe_div(x, y):
             if x > min_x and y > min_y:
@@ -370,6 +376,12 @@ class ImageFrame:
         # resolving
         k1 = np.min(safe_vec_div(a, b))
         k2 = np.min(safe_vec_div(b, a))
+
+        if k1 == 1e20 or k2 ==1e20:
+            if self.__verbose:
+                print("Unable to resolve.")
+            return
+
 
         if self.__verbose:
             print("Mutual dependencies k1, k2 = {}, {}".format(k1, k2))
