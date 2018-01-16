@@ -1,7 +1,7 @@
 *************
 deconvolution
 *************
-A Python module providing Deconvolution class that implements and generalises Ruifrok-Johnston color deconvolution algorithm [RJ]_. It allows one to split an image into distinct color layers in just
+A Python module providing Deconvolution class that implements and generalises Ruifrok-Johnston color deconvolution algorithm [RJ]_, [IJ]_. It allows one to split an image into distinct color layers in just
 a few lines of code:
 
 .. code:: python
@@ -45,8 +45,10 @@ Special thanks to prof. Daniel Wójcik and dr Piotr Majka [N1]_, [N2]_ who super
 
 References
 ----------
-.. [RJ] `Research paper by Ruifrok and Johnston
+.. [RJ] `Research paper by Ruifrok and Johnston 
   <https://www.researchgate.net/publication/11815294_Ruifrok_AC_Johnston_DA_Quantification_of_histochemical_staining_by_color_deconvolution_Anal_Quant_Cytol_Histol_23_291-299>`_
+.. [IJ] `ImageJ webpage
+  <http://imagej.net/Colour_Deconvolution>`_
 .. [N1] `Laboratory of Neuroinformatics webpage
   <http://en.nencki.gov.pl/laboratory-of-neuroinformatics>`_
 .. [N2] https://github.com/Neuroinflab/
