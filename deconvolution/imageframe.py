@@ -212,7 +212,6 @@ class ImageFrame:
                 index = i
 
         n = [eig[1][0][index], eig[1][1][index], eig[1][2][index]]
-        n = n / np.linalg.norm(n)
         n = aux.get_physical_normal(n)
 
         basis = aux.get_basis_from_normal(n)

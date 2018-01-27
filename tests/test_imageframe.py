@@ -131,20 +131,21 @@ class TestBasisPickingAndCompletion(unittest.TestCase):
         self.assertTrue(np.allclose(a, out, rtol=0.01, atol=0))
 
     def test_complete_two(self):
-        u = np.array([0.5, 0.9, 0.9])
-        v = np.array([0.9, 0.5, 0.9])
+        u = np.array([0.3, 0.9, 0.9])
+        v = np.array([0.9, 0.3, 0.9])
 
         a = self.white_matrix(256, 256)
         for i in range(256):
             for j in range(256):
-                a[i][j] *= u**((i+1)/256) * v**((i+1)/256) 
+                a[i][j] *= u**((i+1)/256)
+                a[i][j] *= v**((j+1)/256)
         img = Image.fromarray(np.array(a, dtype=np.uint8))
 
         basis = []
         pixel_operations = px.PixelOperations(basis=basis)
         image_frame = ifr.ImageFrame(image=img, threads=3)
 
-        image_frame.sample_source(pixel_operations)
+        image_frame.sample_source(pixel_operations, sample_density=8)
         image_frame.complete_basis(pixel_operations)
 
         out = np.asarray(
@@ -154,57 +155,64 @@ class TestBasisPickingAndCompletion(unittest.TestCase):
         self.assertTrue(np.allclose(a, out, rtol=0.01, atol=3.))
 
     def test_complete_two_and_resolve(self):
-        # TODO fails??
-        u = np.array([0.5, 0.9, 0.9])
-        v = np.array([0.9, 0.5, 0.9])
+        u = np.array([0.3, 0.9, 0.9])
+        v = np.array([0.9, 0.3, 0.9])
 
         a = self.white_matrix(256, 256)
         for i in range(256):
             for j in range(256):
-                a[i][j] *= u**((i+1)/256) * v**((j+1)/256) 
+                a[i][j] *= u**((i+1)/256)
+                a[i][j] *= v**((j+1)/256)
         img = Image.fromarray(np.array(a, dtype=np.uint8))
 
         basis = []
         pixel_operations = px.PixelOperations(basis=basis)
         image_frame = ifr.ImageFrame(image=img, threads=3)
 
-        image_frame.sample_source(pixel_operations)
+        image_frame.sample_source(pixel_operations, sample_density=8)
         image_frame.complete_basis(pixel_operations)
-        #image_frame.resolve_dependencies(pixel_operations)
+        image_frame.resolve_dependencies(pixel_operations)
 
         out = np.asarray(
                 image_frame.out_images(pixel_operations, mode=[0])[0]
         )
         
-        self.assertTrue(np.allclose(a, out, rtol=0.01, atol=10.))
+        self.assertTrue(np.allclose(a, out, rtol=0.01, atol=3.))
 
     def test_resolve(self):
-        return #TODO
-        u = np.array([0.5, 1.0, 1.0])
-        v = np.array([1.0, 0.5, 1.0])
+        u = np.array([0.3, 0.9, 0.9])
+        v = np.array([0.9, 0.3, 0.9])
 
         a = self.white_matrix(256, 256)
         for i in range(256):
             for j in range(256):
-                a[i][j] *= u**((i+1)/256) * v**((j+1)/256) 
-
+                a[i][j] *= u**((i+1)/256)
+                a[i][j] *= v**((j+1)/256)
         img = Image.fromarray(np.array(a, dtype=np.uint8))
 
         basis = []
         pixel_operations = px.PixelOperations(basis=basis)
-        image_frame = ifr.ImageFrame(image=img)
+        image_frame = ifr.ImageFrame(image=img, threads=3)
 
-        image_frame.sample_source(pixel_operations)
+        image_frame.sample_source(pixel_operations, sample_density=8)
         image_frame.complete_basis(pixel_operations)
-
-        print(pixel_operations.get_basis(), [u, v])
         image_frame.resolve_dependencies(pixel_operations)
-        print(pixel_operations.get_basis(), [u, v])
-#        self.assertTrue(np.allclose(
-#            pixel_operations.get_basis,
-#            [u, v], 
-#            rtol=0.01, atol=3.)
-#        )
+
+        out = np.asarray(
+                image_frame.out_images(pixel_operations, mode=[0])[0]
+        )
+        
+        self.assertTrue(
+            np.allclose(
+                pixel_operations.get_basis(),
+                [u, v], 
+                rtol=0.00, atol=0.03
+            ) or np.allclose(
+                pixel_operations.get_basis(),
+                [v, u], 
+                rtol=0.00, atol=0.03
+            )
+        )
 
 
 if __name__ == '__main__':

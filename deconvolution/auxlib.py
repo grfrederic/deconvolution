@@ -137,6 +137,8 @@ def get_physical_normal(n):
         physical unit vector, shape (3,)
     """
 
+    n = np.array(n)
+
     one_zero = (n[0] == 0 and n[1] * n[2] != 0) or\
                (n[1] == 0 and n[2] * n[0] != 0) or\
                (n[2] == 0 and n[0] * n[1] != 0)
@@ -191,50 +193,18 @@ def get_basis_from_normal(n):
     ndarray
         (log) basis, shape (2,3)
     """
-    axial_flag = False
-    if n[0] * n[1] * n[2] == 0:
-        axial_flag = True
 
-    if axial_flag:
-        index = 0
-        for i in range(3):
-            if n[i] != 0:
-                index = i
+    v = {}
+    v[0] = [0, abs(n[2]), abs(n[1])]
+    v[1] = [abs(n[2]), 0, abs(n[0])]
+    v[2] = [abs(n[1]), abs(n[0]), 0]
 
-        x = [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]]
-        y = [[0, 0, 0], [0, 0, 0]]
-        j = 0
-        for i in range(3):
-            if i != index:
-                y[j] = x[i]
-                j += 1
+    good = [(n[(i + 1) % 3] * n[(i + 2) % 3] <= 0) for i in range(3)]
 
-        return y
+    basis = [v[i] for i in range(3) if good[i]]
+    assert(len(basis) > 1)
 
-    # If n is not a versor
-    x = [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]]
-    best = [0., 0., 0.]
-    for i in x:
-        pr = i - np.dot(i, n) * n
-        if pr[0] > 0 and pr[1] > 0 and pr[2] > 0:
-            best = pr
-
-    y = [1., 1., 1.] - np.dot([1., 1., 1.], n) * n + 2 * best / min(best)
-    x = best
-
-    x = x / np.linalg.norm(x)
-    y = y / np.linalg.norm(y)
-
-    k = min([(y[i] / x[i] if x[i] != 0 else 1e5) for i in range(3)])
-    y -= k * x
-
-    k = min([(x[i] / y[i] if y[i] != 0 else 1e5) for i in range(3)])
-    x -= k * y
-
-    x = x / np.linalg.norm(x)
-    y = y / np.linalg.norm(y)
-
-    return [x, y]
+    return basis[:2]
 
 
 def orthonormal_rotation(v):
