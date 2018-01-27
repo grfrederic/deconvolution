@@ -171,13 +171,14 @@ class TestBasisPickingAndCompletion(unittest.TestCase):
 
         image_frame.sample_source(pixel_operations, sample_density=8)
         image_frame.complete_basis(pixel_operations)
-        image_frame.resolve_dependencies(pixel_operations)
+        image_frame.resolve_dependencies(pixel_operations, belligerency=0.001)
 
         out = np.asarray(
                 image_frame.out_images(pixel_operations, mode=[0])[0]
         )
         
         self.assertTrue(np.allclose(a, out, rtol=0.01, atol=3.))
+
 
     def test_resolve(self):
         u = np.array([0.3, 0.9, 0.9])
@@ -187,7 +188,7 @@ class TestBasisPickingAndCompletion(unittest.TestCase):
         for i in range(256):
             for j in range(256):
                 a[i][j] *= u**((i+1)/256)
-                a[i][j] *= v**((j+1)/256)
+                a[i][j] *= v**((256-i)/256)
         img = Image.fromarray(np.array(a, dtype=np.uint8))
 
         basis = []
@@ -196,21 +197,22 @@ class TestBasisPickingAndCompletion(unittest.TestCase):
 
         image_frame.sample_source(pixel_operations, sample_density=8)
         image_frame.complete_basis(pixel_operations)
-        image_frame.resolve_dependencies(pixel_operations)
+        image_frame.resolve_dependencies(pixel_operations, belligerency=0.001)
 
         out = np.asarray(
                 image_frame.out_images(pixel_operations, mode=[0])[0]
         )
         
+        un, vn = pixel_operations.get_basis()
         self.assertTrue(
             np.allclose(
-                pixel_operations.get_basis(),
-                [u, v], 
-                rtol=0.00, atol=0.03
+                np.cross(np.log(u), np.log(un)),
+                0, 
+                rtol=0.00, atol=0.01
             ) or np.allclose(
-                pixel_operations.get_basis(),
-                [v, u], 
-                rtol=0.00, atol=0.03
+                np.cross(np.log(u), np.log(vn)),
+                0, 
+                rtol=0.00, atol=0.01
             )
         )
 

@@ -199,11 +199,14 @@ def get_basis_from_normal(n):
     v[1] = [abs(n[2]), 0, abs(n[0])]
     v[2] = [abs(n[1]), abs(n[0]), 0]
 
-    good = [(n[(i + 1) % 3] * n[(i + 2) % 3] <= 0) for i in range(3)]
+    good = [(n[(i + 1) % 3] * n[(i + 2) % 3] <= 0) and\
+            (n[(i + 1) % 3] != 0 or n[(i + 2) % 3] != 0) for i in range(3)]
 
     basis = [v[i] for i in range(3) if good[i]]
     assert(len(basis) > 1)
 
+    basis = np.array(basis)
+    basis = [v / np.linalg.norm(v) for v in basis]
     return basis[:2]
 
 
