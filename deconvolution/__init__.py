@@ -11,7 +11,7 @@ class Deconvolution:
         """Automatically completes a zero or two vector basis to a two vector basis."""
         self.image_frame.complete_basis(self.pixel_operations)
 
-    def resolve_dependencies(self, belligerency=0.3):
+    def resolve_dependencies(self, belligerency=0.1):
         """Tries to separate colour basis, so that output images are less dependent on each other.
 
         Parameters

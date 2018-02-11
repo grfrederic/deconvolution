@@ -22,6 +22,8 @@ img_arr = np.array(
      [[100, 100, 100], [255, 100, 100]]], dtype=np.uint8)
 img_mask_R_GB = Image.fromarray(img_arr)
 
+del img_arr
+
 
 class TestImageFrame(unittest.TestCase):
     noneArray = np.array([None])
@@ -54,6 +56,7 @@ class TestImageFrame(unittest.TestCase):
     def test_matrix_inertia(self):
         pixel_operations = px.PixelOperations()
         image_frame = ifr.ImageFrame()
+        image_frame.set_verbose(True)
 
         # no image yet
         with self.assertRaises(ex.ImageException):
@@ -93,6 +96,25 @@ class TestBasisPickingAndCompletion(unittest.TestCase):
     def white_matrix(x, y):
         return 255 * np.ones(shape=(x, y, 3))
 
+    def test_inner_mistakes(self):
+        pixel_operations = px.PixelOperations(basis=[])
+        image_frame = ifr.ImageFrame(image=img_mask_R_G, threads=2, verbose=True)
+
+        with self.assertRaises(ex.BasisException):
+            image_frame._find_substance_one(pixel_operations)
+
+        with self.assertRaises(ex.BasisException):
+            image_frame.resolve_dependencies(pixel_operations)
+
+    def test_missing_data(self):
+        pixel_operations = px.PixelOperations(basis=[[0.5, 0.9, 0.9], [0.9, 0.5, 0.9]])
+        image_frame = ifr.ImageFrame(threads=2, verbose=True)
+        with self.assertRaises(ex.ImageException):
+            image_frame.complete_basis(pixel_operations)
+
+        image_frame.set_image(img_mask_R_G)
+        image_frame.complete_basis(pixel_operations)
+
     def test_complete_one(self):
         u = np.array([0.5, 0.9, 0.9])
         v = np.array([0.9, 0.5, 0.9])
@@ -102,7 +124,7 @@ class TestBasisPickingAndCompletion(unittest.TestCase):
 
         basis = [u]
         pixel_operations = px.PixelOperations(basis=basis)
-        image_frame = ifr.ImageFrame(image=img, threads=3)
+        image_frame = ifr.ImageFrame(image=img, threads=3, verbose=True)
 
         image_frame.sample_source(pixel_operations)
         image_frame.complete_basis(pixel_operations)
@@ -123,6 +145,7 @@ class TestBasisPickingAndCompletion(unittest.TestCase):
         basis = [u, v]
         pixel_operations = px.PixelOperations(basis=basis)
         image_frame = ifr.ImageFrame(image=img, threads=3)
+        image_frame.set_verbose(True)
 
         out = np.asarray(
                 image_frame.out_images(pixel_operations, mode=[0])[0]
@@ -144,6 +167,7 @@ class TestBasisPickingAndCompletion(unittest.TestCase):
         basis = []
         pixel_operations = px.PixelOperations(basis=basis)
         image_frame = ifr.ImageFrame(image=img, threads=3)
+        image_frame.set_verbose(True)
 
         image_frame.sample_source(pixel_operations, sample_density=8)
         image_frame.complete_basis(pixel_operations)
@@ -153,6 +177,32 @@ class TestBasisPickingAndCompletion(unittest.TestCase):
         )
         
         self.assertTrue(np.allclose(a, out, rtol=0.01, atol=3.))
+
+
+    def test_out_scalars(self):
+        u = np.array([0.3, 0.9, 0.9])
+        v = np.array([0.9, 0.3, 0.9])
+
+        a = self.white_matrix(256, 256)
+        uf = np.zeros([256, 256])
+        vf = np.zeros([256, 256])
+
+        for i in range(256):
+            for j in range(256):
+                uf[i][j] = ((i+1)/256)
+                vf[i][j] = ((j+1)/256)
+                a[i][j] *= u**uf[i][j]
+                a[i][j] *= v**vf[i][j]
+        img = Image.fromarray(np.array(a, dtype=np.uint8))
+        image_frame = ifr.ImageFrame(image=img, threads=3)
+
+        basis = [u, v]
+        pixel_operations = px.PixelOperations(basis=basis)
+
+        uf_out, vf_out = image_frame.out_scalars(pixel_operations)
+        
+        self.assertTrue(np.allclose(uf, uf_out, rtol=0.01, atol=3.))
+        self.assertTrue(np.allclose(vf, vf_out, rtol=0.01, atol=3.))
 
     def test_complete_two_and_resolve(self):
         u = np.array([0.3, 0.9, 0.9])
@@ -168,6 +218,7 @@ class TestBasisPickingAndCompletion(unittest.TestCase):
         basis = []
         pixel_operations = px.PixelOperations(basis=basis)
         image_frame = ifr.ImageFrame(image=img, threads=3)
+        image_frame.set_verbose(True)
 
         image_frame.sample_source(pixel_operations, sample_density=8)
         image_frame.complete_basis(pixel_operations)
@@ -178,7 +229,6 @@ class TestBasisPickingAndCompletion(unittest.TestCase):
         )
         
         self.assertTrue(np.allclose(a, out, rtol=0.01, atol=3.))
-
 
     def test_resolve(self):
         u = np.array([0.3, 0.9, 0.9])
@@ -193,7 +243,13 @@ class TestBasisPickingAndCompletion(unittest.TestCase):
 
         basis = []
         pixel_operations = px.PixelOperations(basis=basis)
-        image_frame = ifr.ImageFrame(image=img, threads=3)
+        image_frame = ifr.ImageFrame(threads=3)
+
+        with self.assertRaises(ex.ImageException):
+            image_frame.out_images(pixel_operations)
+
+        image_frame.set_image(img)
+        image_frame.set_verbose(True)
 
         image_frame.sample_source(pixel_operations, sample_density=8)
         image_frame.complete_basis(pixel_operations)
@@ -216,6 +272,32 @@ class TestBasisPickingAndCompletion(unittest.TestCase):
             )
         )
 
+    def test_resolve_pathologies(self):
+        img_arr = np.array(
+            [[[255, 100, 100], [255, 100, 255]],
+             [[255, 255, 100], [255, 255, 255]]], dtype=np.uint8)
+        img = Image.fromarray(img_arr)
+
+        image_frame = ifr.ImageFrame(image=img, threads=3, verbose=True)
+        basis = [
+            [0.5, 0.5, 1.],
+            [0.5, 1., 0.5]
+        ]
+        pixel_operations = px.PixelOperations(basis=basis)
+
+        with self.assertRaises(ValueError):
+            image_frame.resolve_dependencies(pixel_operations,
+                                             belligerency = -1)
+
+        image_frame.resolve_dependencies(pixel_operations,
+                                         belligerency = 100)
+
+        self.assertTrue(
+            np.allclose(basis,
+                        pixel_operations.get_basis(),
+                        rtol=0.01, atol=3.
+            )
+        )
 
 if __name__ == '__main__':
     unittest.main()

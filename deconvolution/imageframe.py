@@ -24,14 +24,14 @@ class ImageFrame:
         verbose : bool
             whether to print internal processing information to std out (e.g. for debugging purposes or process control)
         """
-        self.__verbose = False
+        self._verbose = False
         self.set_verbose(verbose)
 
-        self.__image = None
+        self._image = None
         if image is not None:
             self.set_image(image)
 
-        self.__threads, self.__inertia_matrix = threads, None
+        self._threads, self._inertia_matrix = threads, None
 
     def set_verbose(self, verbose):
         """Change verbosity.
@@ -42,7 +42,7 @@ class ImageFrame:
             set to True prints to the std output internal actions
         """
         if isinstance(verbose, bool):
-            self.__verbose = verbose
+            self._verbose = verbose
         else:
             raise ValueError("Variable verbose has to be bool.")
 
@@ -54,7 +54,7 @@ class ImageFrame:
         bool
             True if verbosity is turned on, False otherwise
         """
-        return self.__verbose
+        return self._verbose
 
     def get_threads(self):
         """Returns number of threads to be used.
@@ -64,7 +64,7 @@ class ImageFrame:
         int
             number of threads used in deconvolution
         """
-        return self.__threads
+        return self._threads
 
     def set_image(self, image):
         """Sets new image to deconvolve.
@@ -79,7 +79,7 @@ class ImageFrame:
             Image has to be a PIL Image
         """
         if isinstance(image, Image.Image):
-            self.__image = np.asarray(image).copy()
+            self._image = np.asarray(image).copy()
         else:
             raise ValueError("image has to be a PIL Image.")
 
@@ -91,7 +91,7 @@ class ImageFrame:
         ndarray
             copy of the array representing image
         """
-        return np.copy(self.__image)
+        return np.copy(self._image)
 
     def get_inertia_matrix(self):
         """Returns copy of the calculated inertia matrix.
@@ -101,12 +101,12 @@ class ImageFrame:
         ndarray
             copy of the array representing the inertia matrix.
         """
-        if not self.__source_sampled():
+        if not self._source_sampled():
             raise ex.ImageException("Source not sampled")
 
-        return np.copy(self.__inertia_matrix)
+        return np.copy(self._inertia_matrix)
 
-    def __source_set(self):
+    def _source_set(self):
         """Check whether an image has been set
 
         Returns
@@ -114,9 +114,9 @@ class ImageFrame:
         bool
             True if it has been set, False otherwise
         """
-        return self.__image is not None
+        return self._image is not None
 
-    def __source_sampled(self):
+    def _source_sampled(self):
         """Check whether the inertia matrix has been calculated
 
         Returns
@@ -124,7 +124,7 @@ class ImageFrame:
         bool
             True if the inertia matrix calculation has been finished
         """
-        return self.__inertia_matrix is not None
+        return self._inertia_matrix is not None
 
     def sample_source(self, pixel_operations, sample_density=5):
         """Creates inertia matrix used for finding optimal bases.
@@ -144,10 +144,10 @@ class ImageFrame:
         --------
         PixelOperations
         """
-        if not self.__source_set():
+        if not self._source_set():
             raise ex.ImageException("No source set")
 
-        if self.__verbose:
+        if self._verbose:
             print("Sampling source...")
 
         step = (2 ** (8 - sample_density))
@@ -162,7 +162,7 @@ class ImageFrame:
         def sample_row(row):
             [sample_pixel(px) for px in row]
 
-        [sample_row(row) for row in self.__image]
+        [sample_row(row) for row in self._image]
 
         w0 = np.ones(2 ** sample_density)
         w1 = np.log( (0.1 + np.arange(2 ** sample_density)) /
@@ -182,12 +182,12 @@ class ImageFrame:
                           [w_vec((i == 0) + (j == 0)), w_vec((i == 1) + (j == 1)), w_vec((i == 2) + (j == 2))]
                           )
 
-        self.__inertia_matrix = [[np.sum(w_mat(i, j) * rgb_sample) for i in range(3)] for j in range(3)]
+        self._inertia_matrix = [[np.sum(w_mat(i, j) * rgb_sample) for i in range(3)] for j in range(3)]
 
-        if self.__verbose:
+        if self._verbose:
             print("Done.")
 
-    def __find_substance_two(self, pixel_operations):
+    def _find_substance_two(self, pixel_operations):
         """Used when two substances are needed, and none of them is known.
 
         Parameters
@@ -199,10 +199,10 @@ class ImageFrame:
         --------
         PixelOperations
         """
-        if self.__verbose:
+        if self._verbose:
             print("Searching for best fitting substances...")
 
-        eig = np.linalg.eig(self.__inertia_matrix)
+        eig = np.linalg.eig(self._inertia_matrix)
 
         minimum = eig[0][0]
         index = 0
@@ -223,12 +223,12 @@ class ImageFrame:
 
         pixel_operations.set_basis(subs)
 
-        if self.__verbose:
+        if self._verbose:
             print("Finished search.")
             print("Found substances:")
             print(subs)
 
-    def __find_substance_one(self, pixel_operations):
+    def _find_substance_one(self, pixel_operations):
         """Used when one additional substance is needed, and one is already known.
 
         Parameters
@@ -245,7 +245,7 @@ class ImageFrame:
         --------
         PixelOperations
         """
-        if self.__verbose:
+        if self._verbose:
             print("Searching for second best fitting substance...")
 
         if pixel_operations.get_basis_dim() == 0:  # Basis requires AT LEAST 1 vector in basis
@@ -257,7 +257,7 @@ class ImageFrame:
 
         rot = aux.orthonormal_rotation(v)
 
-        rot_inert = np.dot(np.dot(rot, self.__inertia_matrix), np.transpose(rot))
+        rot_inert = np.dot(np.dot(rot, self._inertia_matrix), np.transpose(rot))
 
         n = np.dot(np.transpose(rot), aux.find_vector(rot_inert))
         n = aux.get_physical_normal(n)
@@ -274,7 +274,7 @@ class ImageFrame:
 
         pixel_operations.set_basis(subs)
 
-        if self.__verbose:
+        if self._verbose:
             print("Finished search.")
             print("Found substances:")
             print(subs)
@@ -297,18 +297,18 @@ class ImageFrame:
             image has not been set yet
         """
 
-        if not self.__source_set():
+        if not self._source_set():
             raise ex.ImageException("Set source first")
 
-        if not self.__source_sampled():
+        if not self._source_sampled():
             self.sample_source(pixel_operations)
 
         dim = pixel_operations.get_basis_dim()
         if dim == 0:
-            self.__find_substance_two(pixel_operations)
+            self._find_substance_two(pixel_operations)
         elif dim == 1:
-            self.__find_substance_one(pixel_operations)
-        elif self.__verbose:
+            self._find_substance_one(pixel_operations)
+        elif self._verbose:
             print("Basis already complete")
 
     def resolve_dependencies(self, pixel_operations=None, belligerency=0.3):
@@ -335,13 +335,16 @@ class ImageFrame:
         if pixel_operations.get_basis_dim() != 2:
             raise ex.BasisException("Exactly two element basis needed for resolve_dependencies")
 
+        if belligerency < 0:
+            raise ValueError("Belligerency needs to be nonnegative.")
+
         # collecting data
-        if self.__verbose:
+        if self._verbose:
             print("Decomposition info:\n")
 
-        surf = len(self.__image[0]) * len(self.__image[0])
+        surf = len(self._image[0]) * len(self._image[0])
 
-        a, b = pixel_operations.get_coef(self.__image)
+        a, b = pixel_operations.get_coef(self._image)
         a_neg_sum = np.sum(np.minimum(a, 0))
         a_pos_sum = np.sum(np.maximum(a, 0))
         a_mean = a_pos_sum/surf
@@ -350,7 +353,7 @@ class ImageFrame:
         b_pos_sum = np.sum(np.maximum(b, 0))
         b_mean = b_pos_sum/surf
 
-        if self.__verbose:
+        if self._verbose:
             print("First substance:")
             print("Negativity: {} Mean value: {}".format(a_neg_sum/aux.positive(a_pos_sum), a_mean))
             print("Second substance:")
@@ -358,11 +361,6 @@ class ImageFrame:
 
         min_x = belligerency * a_mean
         min_y = belligerency * b_mean
-
-        if min_y <= 0:
-            if self.__verbose:
-                print("Unable to resolve.")
-            return
 
         def safe_div(x, y):
             if x > min_x and y > min_y:
@@ -377,12 +375,12 @@ class ImageFrame:
         k2 = np.min(safe_vec_div(b, a))
 
         if k1 == 1e20 or k2 ==1e20:
-            if self.__verbose:
+            if self._verbose:
                 print("Unable to resolve.")
             return
 
 
-        if self.__verbose:
+        if self._verbose:
             print("Mutual dependencies k1, k2 = {}, {}".format(k1, k2))
 
         basis = pixel_operations.get_basis()
@@ -391,7 +389,7 @@ class ImageFrame:
              [basis[1][0]*(basis[0][0]**k1), basis[1][1]*(basis[0][1]**k1), basis[1][2]*(basis[0][2]**k1)]]
         )
 
-        if self.__verbose:
+        if self._verbose:
             print("Corrected substances:")
             print(pixel_operations.get_basis())
 
@@ -403,7 +401,7 @@ class ImageFrame:
         list
             list of numpy arrays (length is the dimensionality of basis), each with exponent field of coefficient
         """
-        return pixel_operations.get_coef(self.__image)
+        return pixel_operations.get_coef(self._image)
 
     def out_images(self, pixel_operations=None, mode=None):
         """Get list of deconvolved images.
@@ -429,11 +427,11 @@ class ImageFrame:
         ImageException
             you need image to deconvolve
         """
-        if not self.__source_set():
+        if not self._source_set():
             raise ex.ImageException("Error: source has to be set first")
 
-        if self.__verbose:
+        if self._verbose:
             print("Returning deconvolved images...")
 
-        out_tmp = pixel_operations.transform_image(self.__image, mode=mode)
+        out_tmp = pixel_operations.transform_image(self._image, mode=mode)
         return [Image.fromarray(out_tmp[i]) for i in range(len(mode))]
