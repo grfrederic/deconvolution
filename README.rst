@@ -20,7 +20,12 @@ a few lines of code:
 
 Installation
 ------------
-TODO
+To install the package run:
+
+.. code:: bash
+
+  make install
+
 
 Testing
 -------
