@@ -7,7 +7,7 @@ def readme():
 
 setup(
     name='deconvolution',
-    version='0.0.1',
+    version='1.0.0',
     description='Package performing colour deconvolution',
     url='https://github.com/grfrederic/deconvolution',
     author='Frederic Grabowski, Pawel Czyz',
