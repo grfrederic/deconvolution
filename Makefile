@@ -15,6 +15,6 @@ comp:
 	python2 -m unittest discover -s tests > /dev/null
 
 install:
-	pip install -e .
+	pip install .
 
 .PHONY: test
