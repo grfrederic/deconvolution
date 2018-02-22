@@ -14,4 +14,7 @@ html:
 comp:
 	python2 -m unittest discover -s tests > /dev/null
 
+install:
+	pip install -e .
+
 .PHONY: test
