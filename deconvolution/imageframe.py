@@ -12,7 +12,7 @@ from functools import reduce
 
 
 class ImageFrame:
-    def __init__(self, image=None, threads=1, verbose=False):
+    def __init__(self, image=None, threads=1, verbose=False, sample_density=5):
         """Class that can be used to deconvolve an image
 
         Parameters
@@ -23,15 +23,31 @@ class ImageFrame:
             number of threads to use
         verbose : bool
             whether to print internal processing information to std out (e.g. for debugging purposes or process control)
+        sample_density : int
+            precision of sampling
         """
         self._verbose = False
         self.set_verbose(verbose)
+        self._sample_density = 0
+        self.sample_density = sample_density
 
         self._image = None
         if image is not None:
             self.set_image(image)
 
         self._threads, self._inertia_matrix = threads, None
+
+    @property
+    def sample_density(self):
+        return self._sample_density
+
+    @sample_density.setter
+    def sample_density(self, value):
+        if not isinstance(value, int):
+            raise TypeError("sample_density must be int")
+        if value not in range(2, 9):
+            raise ValueError("sample density must be in interval [2,8]")
+        self._sample_density = value
 
     def set_verbose(self, verbose):
         """Change verbosity.
@@ -126,15 +142,13 @@ class ImageFrame:
         """
         return self._inertia_matrix is not None
 
-    def sample_source(self, pixel_operations, sample_density=5):
+    def sample_source(self, pixel_operations):
         """Creates inertia matrix used for finding optimal bases.
 
         Parameters
         ----------
         pixel_operations : PixelOperations
             an object used for manipulation with basis and background
-        sample_density : int
-            precision of sampling
 
         Raises
         --------
@@ -150,8 +164,8 @@ class ImageFrame:
         if self._verbose:
             print("Sampling source...")
 
-        step = (2 ** (8 - sample_density))
-        rgb_sample = np.zeros(shape=(2 ** sample_density, 2 ** sample_density, 2 ** sample_density))
+        step = (2 ** (8 - self.sample_density))
+        rgb_sample = np.zeros(shape=(2 ** self.sample_density, 2 ** self.sample_density, 2 ** self.sample_density))
 
         def sample_pixel(pix):
             rgb = np.array(pix, dtype=float) / pixel_operations.get_background()
@@ -164,9 +178,9 @@ class ImageFrame:
 
         [sample_row(row) for row in self._image]
 
-        w0 = np.ones(2 ** sample_density)
-        w1 = np.log( (0.1 + np.arange(2 ** sample_density)) /
-                     (0.1 + 2 ** sample_density) )
+        w0 = np.ones(2 ** self.sample_density)
+        w1 = np.log((0.1 + np.arange(2 ** self.sample_density)) /
+                    (0.1 + 2 ** self.sample_density))
         w2 = w1 * w1
 
         def w_vec(i):

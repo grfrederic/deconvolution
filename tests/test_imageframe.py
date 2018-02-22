@@ -66,13 +66,13 @@ class TestImageFrame(unittest.TestCase):
         with self.assertRaises(ex.ImageException):
             image_frame.get_inertia_matrix()       
 
-        image_frame = ifr.ImageFrame(image=img_mask_R_G, threads=4)
+        image_frame = ifr.ImageFrame(image=img_mask_R_G, threads=4, sample_density=2)
 
         # not sampled
         with self.assertRaises(ex.ImageException):
             image_frame.get_inertia_matrix()
 
-        image_frame.sample_source(pixel_operations, sample_density=2)
+        image_frame.sample_source(pixel_operations)
         a = np.array(image_frame.get_inertia_matrix())
 
         self.assertTrue(
@@ -166,10 +166,10 @@ class TestBasisPickingAndCompletion(unittest.TestCase):
 
         basis = []
         pixel_operations = px.PixelOperations(basis=basis)
-        image_frame = ifr.ImageFrame(image=img, threads=3)
+        image_frame = ifr.ImageFrame(image=img, threads=3, sample_density=8)
         image_frame.set_verbose(True)
 
-        image_frame.sample_source(pixel_operations, sample_density=8)
+        image_frame.sample_source(pixel_operations)
         image_frame.complete_basis(pixel_operations)
 
         out = np.asarray(
@@ -177,7 +177,6 @@ class TestBasisPickingAndCompletion(unittest.TestCase):
         )
         
         self.assertTrue(np.allclose(a, out, rtol=0.01, atol=3.))
-
 
     def test_out_scalars(self):
         u = np.array([0.3, 0.9, 0.9])
@@ -217,10 +216,10 @@ class TestBasisPickingAndCompletion(unittest.TestCase):
 
         basis = []
         pixel_operations = px.PixelOperations(basis=basis)
-        image_frame = ifr.ImageFrame(image=img, threads=3)
+        image_frame = ifr.ImageFrame(image=img, threads=3, sample_density=8)
         image_frame.set_verbose(True)
 
-        image_frame.sample_source(pixel_operations, sample_density=8)
+        image_frame.sample_source(pixel_operations)
         image_frame.complete_basis(pixel_operations)
         image_frame.resolve_dependencies(pixel_operations, belligerency=0.001)
 
@@ -243,7 +242,7 @@ class TestBasisPickingAndCompletion(unittest.TestCase):
 
         basis = []
         pixel_operations = px.PixelOperations(basis=basis)
-        image_frame = ifr.ImageFrame(threads=3)
+        image_frame = ifr.ImageFrame(threads=3, sample_density=8)
 
         with self.assertRaises(ex.ImageException):
             image_frame.out_images(pixel_operations)
@@ -251,7 +250,7 @@ class TestBasisPickingAndCompletion(unittest.TestCase):
         image_frame.set_image(img)
         image_frame.set_verbose(True)
 
-        image_frame.sample_source(pixel_operations, sample_density=8)
+        image_frame.sample_source(pixel_operations)
         image_frame.complete_basis(pixel_operations)
         image_frame.resolve_dependencies(pixel_operations, belligerency=0.001)
 
@@ -298,6 +297,16 @@ class TestBasisPickingAndCompletion(unittest.TestCase):
                         rtol=0.01, atol=3.
             )
         )
+
+    def test_sample_density_1(self):
+        for wrong_val in [-1, 0, 1, 9, 10, 100]:
+            with self.assertRaises(ValueError):
+                ifr.ImageFrame(sample_density=wrong_val)
+
+    def test_sample_density_2(self):
+        for wrong_val in ["abc", 2.6, 3.0, {1, 2}]:
+            with self.assertRaises(TypeError):
+                ifr.ImageFrame(sample_density=wrong_val)
 
 if __name__ == '__main__':
     unittest.main()

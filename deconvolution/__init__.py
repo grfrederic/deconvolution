@@ -34,7 +34,7 @@ class Deconvolution:
         Returns
         -------
         list
-            list of PIL Images
+            list of PIL Images, in order same as given by `mode`
 
         See Also
         --------
@@ -107,7 +107,7 @@ class Deconvolution:
         else:
             raise ValueError("Variable verbose has to be bool.")
 
-    def __init__(self, image=None, basis=None, verbose=False, background=None):
+    def __init__(self, image=None, basis=None, verbose=False, background=None, sample_density=5):
         """High-level class able to deconvolve PIL Image without any effort and gain other images and stain densities
 
         Parameters
@@ -120,6 +120,8 @@ class Deconvolution:
             set to True prints to the std output internal actions
         background : array_like
             colour vector (three components, each in [0,1])
+        sample_density : int
+            precision of sampling. Should be in interval [2, 8]
 
         Notes
         --------
@@ -127,7 +129,7 @@ class Deconvolution:
         """
 
         self.pixel_operations = po.PixelOperations(basis=basis, background=background)
-        self.image_frame = fr.ImageFrame(image=image, verbose=verbose)
+        self.image_frame = fr.ImageFrame(image=image, verbose=verbose, sample_density=sample_density)
 
         self.sample_flag = False
         self.verbose = False
