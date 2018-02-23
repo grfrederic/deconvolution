@@ -20,7 +20,13 @@ a few lines of code:
 
 Installation
 ------------
-To install the package run:
+You can install the package using pip:
+
+.. code:: bash
+
+  pip install deconvolution
+
+Alternatively, you can clone the repository and run:
 
 .. code:: bash
 
