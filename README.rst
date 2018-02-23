@@ -32,6 +32,13 @@ Alternatively, you can clone the repository and run:
 
   make install
 
+Since then you can import use the module in your scripts:
+
+.. code:: python
+
+  from deconvolution import Deconvolution
+  d = Deconvolution()
+
 
 Testing
 -------
@@ -48,6 +55,26 @@ Testing
 
   # Check the coverage interactively, using a web browser
   make html
+
+
+Deconvolve
+----------
+For better usage experience we created a script allowing one to deconvolve images from the shell. Copy `deconvolve.py` file into `/usr/local/bin` or, if you want to use it locally:
+
+.. code:: bash
+
+  mkdir ~/bin
+  cp deconvolve.py ~/bin
+  export PATH=~/bin:$PATH
+
+Since then you can deconvolve images using:
+
+.. code:: bash
+
+  deconvolve.py image1.png image2.png ...
+  # For help
+  deconvolve.py -h
+
 
 Contributors
 ------------
