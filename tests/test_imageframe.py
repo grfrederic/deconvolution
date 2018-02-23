@@ -304,7 +304,7 @@ class TestBasisPickingAndCompletion(unittest.TestCase):
                 ifr.ImageFrame(sample_density=wrong_val)
 
     def test_sample_density_2(self):
-        for wrong_val in ["abc"]:
+        for wrong_val in ["abc", 2.6, 3.8, {1: 2}, {1, 2, 3}]:
             with self.assertRaises(TypeError):
                 ifr.ImageFrame(sample_density=wrong_val)
 
