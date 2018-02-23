@@ -103,10 +103,10 @@ class TestBasisPickingAndCompletion(unittest.TestCase):
         dec = dc.Deconvolution(image=img)
         uf, vf = dec.out_scalars()
         self.assertTrue(
-            np.all(uf > 0)
+            np.all(uf >= 0)
         )
         self.assertTrue(
-            np.all(vf > 0)
+            np.all(vf >= 0)
         )
 
 if __name__ == '__main__':

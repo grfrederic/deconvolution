@@ -11,7 +11,7 @@ import deconvolution.exceptions as ex
 from functools import reduce
 
 
-class ImageFrame:
+class ImageFrame(object):
     def __init__(self, image=None, threads=1, verbose=False, sample_density=5):
         """Class that can be used to deconvolve an image
 
