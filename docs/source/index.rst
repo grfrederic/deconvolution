@@ -10,7 +10,8 @@ Welcome to deconvolution's documentation!
    :maxdepth: 2
    
    readme
-   :caption: Contents:
+..
+  :caption: Contents:
    
 
 

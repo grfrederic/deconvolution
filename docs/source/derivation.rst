@@ -1,9 +1,8 @@
+===============================================
 Mathematical description of color deconvolution
 ===============================================
-
 Introduction
 ------------
-
 Let us imagine a light source that sends light through layers of different substances - each of them absorbing some of the light passing through. 
 Given a digital recording of the light that passed through this setup (and information of the input light), we would like to reconstruct the layout of the substances.
 
@@ -152,7 +151,6 @@ In order to fix this problem, drop the third substance entirely, and look for :m
   \begin{bmatrix}
     \log(r_1/i_1)\\\log(r_2/i_2)\\\log(r_3/i_3)
   \end{bmatrix} \approx 0.
-  :label: 2vec
 
 Where both the matrix and the 3-vector are given. Clean up the notation: 
 
@@ -207,7 +205,6 @@ After processing every pixel in this manner the reconstructed image, two single 
 
 Formulation of the optimization problem
 ---------------------------------------
-
 Considering deconvolutions with two substances has another advantage - it gives a criterium for comparing bases. Taking 
 
 .. math::
@@ -308,6 +305,7 @@ We only need to consider :math:`\vec n` such that :math:`||\vec n||=1`. Because 
 
 .. math::
   \nabla ( g(\vec n) -\lambda ||\vec n||^2 ) = 0,
+
 after expanding and rearranging
 
 .. math::

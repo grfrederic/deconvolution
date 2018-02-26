@@ -1,6 +1,6 @@
+========
 Examples
 ========
-
 Ruifrok-Johnston deconvolution
 ------------------------------
 Assume that we have an image and we know three stains. We can deconvolve image and get density layers: 

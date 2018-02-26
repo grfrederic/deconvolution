@@ -75,6 +75,10 @@ Since then you can deconvolve images using:
   # For help
   deconvolve.py -h
 
+Documentation
+-------------
+Check out our documentation at `Read The Docs
+https://deconvolution.readthedocs.io`_.
 
 Contributors
 ------------
