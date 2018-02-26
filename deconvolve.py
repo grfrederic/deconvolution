@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python
 from deconvolution import Deconvolution
 from PIL import Image
 import argparse
