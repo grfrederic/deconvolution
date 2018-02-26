@@ -78,7 +78,7 @@ Since then you can deconvolve images using:
 Documentation
 -------------
 Check out our documentation at `Read The Docs
-https://deconvolution.readthedocs.io`_.
+<https://deconvolution.readthedocs.io>`_.
 
 Contributors
 ------------
