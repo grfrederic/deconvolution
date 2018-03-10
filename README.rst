@@ -94,8 +94,8 @@ References
   <http://imagej.net/Colour_Deconvolution>`_
 .. [N1] `Laboratory of Neuroinformatics webpage
   <http://en.nencki.gov.pl/laboratory-of-neuroinformatics>`_
-.. [GL] `Prof. Gabriel Landini's webpage`
-  <https://www.birmingham.ac.uk/staff/profiles/clinical-sciences/landini-gabriel.aspx>
+.. [GL] `Prof. Gabriel Landini's webpage
+  <https://www.birmingham.ac.uk/staff/profiles/clinical-sciences/landini-gabriel.aspx>`_
 .. [N2] https://github.com/Neuroinflab/
 .. [FG] https://github.com/grfrederic
 .. [PC] https://github.com/pawel-czyz
