@@ -83,7 +83,8 @@ Check out our documentation at `Read The Docs
 Contributors
 ------------
 Method developed by Frederic Grabowski generalising Ruifrok-Johnston algorithm [RJ]_. and implemented by Frederic Grabowski [FG]_ and Paweł Czyż [PC]_.
-Special thanks to prof. Daniel Wójcik and dr Piotr Majka [N1]_, [N2]_ who supervised the project.
+We are very grateful to prof. Daniel Wójcik and dr Piotr Majka [N1]_, [N2]_ who supervised the project. We also would like to thank prof. Gabriel Landini [GL]_, who
+implemented the colour deconvolution in ImageJ [IJ]_ and allowed us to test the algorithm on his data.
 
 References
 ----------
@@ -93,6 +94,8 @@ References
   <http://imagej.net/Colour_Deconvolution>`_
 .. [N1] `Laboratory of Neuroinformatics webpage
   <http://en.nencki.gov.pl/laboratory-of-neuroinformatics>`_
+.. [GL] `Prof. Gabriel Landini's webpage`
+  <https://www.birmingham.ac.uk/staff/profiles/clinical-sciences/landini-gabriel.aspx>
 .. [N2] https://github.com/Neuroinflab/
 .. [FG] https://github.com/grfrederic
 .. [PC] https://github.com/pawel-czyz
