@@ -147,7 +147,6 @@ def get_physical_normal(n):
         return n
 
     # print("Best fitting plane non-physical, attempting to correct...")
-    m = n
 
     if check_positivity(n) or check_positivity(-n):
         minimum = np.abs(n[0])
