@@ -11,7 +11,7 @@ setup(
     description='Package performing colour deconvolution',
     url='https://github.com/grfrederic/deconvolution',
     author='Frederic Grabowski, Pawel Czyz',
-    author_email='grabowski.frederic@gmail.com, pczyz@protonmail.com',
+    author_email='grabowski.frederic@gmail.com',
     license='BSD 3-Clause License',
     packages=['deconvolution'],
 
